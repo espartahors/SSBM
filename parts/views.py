@@ -21,6 +21,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Part, MarkedPart
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 class DashboardView(LoginRequiredMixin, ListView):
     """Main dashboard with the parts tree and search"""
@@ -93,6 +94,60 @@ def part_tree_json(request):
     
     # Build tree data
     tree_data = build_tree_data(root_parts, marked_part_ids)
+    
+    return JsonResponse(tree_data, safe=False)
+
+@login_required
+def codification_tree_json(request):
+    """API endpoint to get the parts tree as JSON for the codification view"""
+    def build_codification_tree(parts):
+        tree_data = []
+        
+        # Group parts by system code (level 1)
+        systems = {}
+        for part in parts:
+            if part.system_code:
+                if part.system_code not in systems:
+                    systems[part.system_code] = {
+                        'code': part.system_code,
+                        'description': part.name,
+                        'level': 1,
+                        'id': part.id,
+                        'children': []
+                    }
+                
+                # Add subsystems if present
+                if part.subsystem_code:
+                    # Find or create subsystem
+                    subsystem = next(
+                        (s for s in systems[part.system_code]['children'] 
+                        if s['code'] == part.subsystem_code), 
+                        None
+                    )
+                    
+                    if not subsystem:
+                        subsystem = {
+                            'code': part.subsystem_code,
+                            'description': part.name,
+                            'level': 2,
+                            'id': part.id,
+                            'children': []
+                        }
+                        systems[part.system_code]['children'].append(subsystem)
+                    
+                    # Continue for component and subcomponent...
+        
+        # Convert systems dict to list
+        for system_code, system in systems.items():
+            tree_data.append(system)
+        
+        return tree_data
+    
+    # Get parts with codification data
+    parts = Part.objects.exclude(equipment_code='').order_by('system_code', 'subsystem_code')
+    
+    # Build tree data
+    tree_data = build_codification_tree(parts)
     
     return JsonResponse(tree_data, safe=False)
 
@@ -585,3 +640,12 @@ def import_log_detail(request, pk):
     
     log = get_object_or_404(ImportLog, pk=pk)
     return render(request, 'parts/import_log_detail.html', {'log': log})
+
+@login_required
+@ensure_csrf_cookie
+def codification_viewer(request):
+    """View for the equipment codification tree viewer"""
+    context = {
+        'title': 'Equipment Codification Viewer'
+    }
+    return render(request, 'parts/codification_viewer.html', context)

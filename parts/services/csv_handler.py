@@ -14,7 +14,7 @@ class CSVImportException(Exception):
 class CSVHandler:
     """Handler for CSV import and export operations"""
     
-    REQUIRED_HEADERS = ['ID', 'Name', 'Level', 'Info', 'Parent']
+    REQUIRED_HEADERS = ['ID', 'Name', 'Level', 'Info', 'Parent', 'EquipmentCode', 'System', 'Subsystem', 'Component', 'Subcomponent']
     
     @staticmethod
     def validate_csv_structure(csv_file):
@@ -111,6 +111,11 @@ class CSVHandler:
                         level = int(row['Level']) if 'Level' in row else 0
                         info = row['Info'] if 'Info' in row else ''
                         parent_id = row['Parent'] if 'Parent' in row and not pd.isna(row['Parent']) else None
+                        equipment_code = row['EquipmentCode'] if 'EquipmentCode' in row else ''
+                        system_code = row['System'] if 'System' in row else ''
+                        subsystem_code = row['Subsystem'] if 'Subsystem' in row else ''
+                        component_code = row['Component'] if 'Component' in row else ''
+                        subcomponent_code = row['Subcomponent'] if 'Subcomponent' in row else ''
                         
                         # Convert parent_id to string if it exists
                         if parent_id is not None and not isinstance(parent_id, str):
@@ -142,6 +147,11 @@ class CSVHandler:
                                 existing_part.level = level
                                 existing_part.info = info
                                 existing_part.parent = parent
+                                existing_part.equipment_code = equipment_code
+                                existing_part.system_code = system_code
+                                existing_part.subsystem_code = subsystem_code
+                                existing_part.component_code = component_code
+                                existing_part.subcomponent_code = subcomponent_code
                                 existing_part.modified_by = user
                                 existing_part.save()
                                 parent_map[part_id] = existing_part
@@ -158,6 +168,11 @@ class CSVHandler:
                                 level=level,
                                 info=info,
                                 parent=parent,
+                                equipment_code=equipment_code,
+                                system_code=system_code,
+                                subsystem_code=subsystem_code,
+                                component_code=component_code,
+                                subcomponent_code=subcomponent_code,
                                 created_by=user,
                                 modified_by=user
                             )
@@ -197,8 +212,12 @@ class CSVHandler:
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Write headers
-        writer.writerow(['ID', 'Name', 'Level', 'Info', 'Parent', 'Created By', 'Created At', 'Modified By', 'Modified At'])
+        # Write headers with codification
+        writer.writerow([
+            'ID', 'Name', 'Level', 'Info', 'Parent', 
+            'EquipmentCode', 'System', 'Subsystem', 'Component', 'Subcomponent',
+            'Created By', 'Created At', 'Modified By', 'Modified At'
+        ])
         
         # Write part data
         for part in parts:
@@ -208,6 +227,11 @@ class CSVHandler:
                 part.level,
                 part.info,
                 part.parent.part_id if part.parent else '',
+                part.equipment_code or '',
+                part.system_code or '',
+                part.subsystem_code or '',
+                part.component_code or '',
+                part.subcomponent_code or '',
                 part.created_by.username if part.created_by else '',
                 part.created_at.strftime('%Y-%m-%d %H:%M:%S') if part.created_at else '',
                 part.modified_by.username if part.modified_by else '',

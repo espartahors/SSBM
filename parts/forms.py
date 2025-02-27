@@ -7,13 +7,23 @@ class PartForm(forms.ModelForm):
     """Form for creating and updating parts"""
     class Meta:
         model = Part
-        fields = ['part_id', 'name', 'level', 'info', 'parent']
+        fields = [
+            'part_id', 'name', 'level', 'info', 'parent',
+            'equipment_code', 'codification_level', 
+            'system_code', 'subsystem_code', 'component_code', 'subcomponent_code'
+        ]
         widgets = {
             'part_id': forms.TextInput(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'level': forms.NumberInput(attrs={'class': 'form-control'}),
             'info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'parent': forms.Select(attrs={'class': 'form-control'}),
+            'equipment_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'codification_level': forms.NumberInput(attrs={'class': 'form-control'}),
+            'system_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'subsystem_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'component_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'subcomponent_code': forms.TextInput(attrs={'class': 'form-control'}),
         }
     
     def __init__(self, *args, **kwargs):

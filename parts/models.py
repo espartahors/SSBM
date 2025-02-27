@@ -27,6 +27,14 @@ class Part(models.Model):
     # Tracking
     is_active = models.BooleanField(default=True)
     
+    # Add codification fields
+    equipment_code = models.CharField(max_length=100, blank=True, null=True, help_text="Equipment codification code")
+    codification_level = models.PositiveSmallIntegerField(default=0, help_text="Codification hierarchy level")
+    system_code = models.CharField(max_length=20, blank=True, null=True, help_text="Level 1 system code")
+    subsystem_code = models.CharField(max_length=20, blank=True, null=True, help_text="Level 2 subsystem code")
+    component_code = models.CharField(max_length=20, blank=True, null=True, help_text="Level 3 component code")
+    subcomponent_code = models.CharField(max_length=20, blank=True, null=True, help_text="Level 4 subcomponent code")
+    
     class Meta:
         ordering = ['level', 'part_id']
     
@@ -51,6 +59,20 @@ class Part(models.Model):
     def primary_document(self):
         """Returns the first document if any exist"""
         return self.documents.first()
+    
+    def get_formatted_equipment_code(self):
+        """Return the equipment code formatted with proper separators and HTML markup"""
+        if not self.equipment_code:
+            return ""
+            
+        parts = self.equipment_code.split('-')
+        formatted_parts = []
+        
+        for i, part in enumerate(parts):
+            level_class = f"code-level-{i+1}"
+            formatted_parts.append(f'<span class="{level_class}">{part}</span>')
+            
+        return '-'.join(formatted_parts)
 
 class Document(models.Model):
     """

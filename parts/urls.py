@@ -8,6 +8,8 @@ urlpatterns = [
     # API endpoints
     path('tree-json/', views.part_tree_json, name='part-tree-json'),
     path('tree/', views.parts_tree_view, name='parts-tree'),
+    path('codification-tree-json/', views.codification_tree_json, name='codification-tree-json'),
+
 
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     

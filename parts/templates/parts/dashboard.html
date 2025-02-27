@@ -58,6 +58,12 @@
         {% endif %}
     </div>
     
+    <!-- Add view toggle buttons -->
+    <div class="view-toggle-container">
+        <button class="btn btn-outline-primary active" id="treeViewBtn">Parts Tree</button>
+        <button class="btn btn-outline-primary" id="codificationViewBtn">Codification View</button>
+    </div>
+    
     <!-- Marker Panel (initially hidden) -->
     <div id="markerPanel" class="marker-container" style="display: none;">
         <form id="addMarkerForm" method="post" action="{% url 'mark-part' 0 %}">
@@ -80,7 +86,10 @@
     <div class="content">
         <!-- Left Panel (Tree View) -->
         <div class="left-panel">
-            <div class="panel-header">Structure</div>
+            <div class="panel-header">
+                <span id="treeStructureHeader">Structure</span>
+                <span id="codificationHeader" style="display:none;">Codification</span>
+            </div>
             
             <!-- Search Box -->
             <div class="search-box">
@@ -88,9 +97,10 @@
                 <button id="searchBtn" class="btn btn-primary btn-sm">Find</button>
             </div>
             
-            <!-- Tree Container -->
+            <!-- Tree Container with both views -->
             <div class="tree-container" id="treeContainer">
                 <div id="partsTree"></div>
+                <div id="codificationTree" style="display:none;"></div>
             </div>
         </div>
         
@@ -217,6 +227,25 @@
             if (e.key === 'Enter') {
                 document.getElementById('searchBtn').click();
             }
+        });
+
+        // Toggle between tree view and codification view
+        document.getElementById('treeViewBtn').addEventListener('click', function() {
+            document.getElementById('treeContainer').style.display = 'block';
+            document.getElementById('codificationTree').style.display = 'none';
+            document.getElementById('treeStructureHeader').style.display = 'inline';
+            document.getElementById('codificationHeader').style.display = 'none';
+            this.classList.add('active');
+            document.getElementById('codificationViewBtn').classList.remove('active');
+        });
+
+        document.getElementById('codificationViewBtn').addEventListener('click', function() {
+            document.getElementById('treeContainer').style.display = 'none';
+            document.getElementById('codificationTree').style.display = 'block';
+            document.getElementById('treeStructureHeader').style.display = 'none';
+            document.getElementById('codificationHeader').style.display = 'inline';
+            this.classList.add('active');
+            document.getElementById('treeViewBtn').classList.remove('active');
         });
     });
     

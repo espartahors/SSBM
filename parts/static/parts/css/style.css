@@ -504,3 +504,61 @@ body {
     border-radius: 4px;
     text-align: center;
 }
+
+/* parts/static/parts/css/style.css - Add to existing stylesheet */
+
+/* Codification styles */
+.codification-tree {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+}
+
+.code-node {
+    padding: 4px 8px;
+    margin: 2px 0;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.code-node:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.code-node-content {
+    display: flex;
+    align-items: center;
+}
+
+.code-level-1 { color: #d63384; }
+.code-level-2 { color: #0d6efd; }
+.code-level-3 { color: #198754; }
+.code-level-4 { color: #fd7e14; }
+
+.code-children {
+    margin-left: 20px;
+}
+
+.code-toggle {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.level-indicator {
+    width: 24px;
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    margin-right: 8px;
+}
+
+.equipment-code {
+    font-family: monospace;
+    padding: 2px 6px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    margin-left: 10px;
+}
