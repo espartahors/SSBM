@@ -1,0 +1,6 @@
+<!-- export-csv.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path d="M2,2v12h12V6H10V2H2z M4,4h4v2H4V4z M8,8h4v2H8V8z M4,8h3v4H4V8z" fill="#0066cc"/>
+  <path d="M11,4l0-2h3l0,2h-3z" fill="#0066cc"/>
+  <path d="M10,3l3,-3l0,6z" fill="#0066cc"/>
+</svg>

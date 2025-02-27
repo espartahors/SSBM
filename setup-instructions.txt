@@ -1,0 +1,165 @@
+# Bomdels - Parts Management System
+
+A comprehensive system for managing parts, their hierarchical relationships, and associated documents. This system is designed to be a Django implementation of the Bomdels application, allowing for web-based access and database storage.
+
+## Features
+
+- **Parts Management**: Create, view, update, and delete parts with hierarchical relationships
+- **Document Management**: Upload and manage documents associated with parts
+- **CSV Import/Export**: Import parts from CSV files and export to CSV
+- **Marking System**: Mark parts for quick access later
+- **User Management**: Different user roles with appropriate permissions
+- **Activity Tracking**: Track all user activities for audit purposes
+
+## Setup Instructions
+
+### Prerequisites
+
+- Python 3.8+
+- PostgreSQL 12+
+- pip (Python package manager)
+- Virtual environment (optional but recommended)
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone <repository-url>
+cd bomdels_project
+```
+
+2. **Create and activate a virtual environment (optional)**
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
+
+3. **Install dependencies**
+
+```bash
+pip install -r requirements.txt
+```
+
+4. **Create PostgreSQL database**
+
+```sql
+CREATE DATABASE bomdels_db;
+CREATE USER bomdels_user WITH PASSWORD 'your_password';
+ALTER ROLE bomdels_user SET client_encoding TO 'utf8';
+ALTER ROLE bomdels_user SET default_transaction_isolation TO 'read committed';
+ALTER ROLE bomdels_user SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE bomdels_db TO bomdels_user;
+```
+
+5. **Configure environment variables (or update settings.py)**
+
+Create a `.env` file in the project root with the following:
+
+```
+DEBUG=True
+SECRET_KEY=your_secret_key
+DATABASE_NAME=bomdels_db
+DATABASE_USER=bomdels_user
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+```
+
+6. **Apply migrations**
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+7. **Create a superuser**
+
+```bash
+python manage.py createsuperuser
+```
+
+8. **Collect static files**
+
+```bash
+python manage.py collectstatic
+```
+
+9. **Run the development server**
+
+```bash
+python manage.py runserver
+```
+
+10. **Access the application**
+
+Open your browser and go to http://127.0.0.1:8000/
+
+The superuser you created can log in at http://127.0.0.1:8000/users/login/
+
+### Setting Up Initial Data
+
+1. **Creating User Roles**
+
+After logging in as the superuser, go to the Django admin panel at http://127.0.0.1:8000/admin/
+
+Navigate to User Profiles and make sure the superuser has the 'admin' role assigned.
+
+2. **Importing Parts from CSV**
+
+Prepare a CSV file with the following columns:
+- ID: Part identifier
+- Name: Part name/description
+- Level: Hierarchical level (0 for root items)
+- Info: Additional information (optional)
+- DocRef: Document reference (optional)
+
+Navigate to Import CSV in the application and upload your file.
+
+## Usage
+
+### User Roles
+
+- **Admin**: Full access to all features including user management
+- **Manager**: Can add/edit parts, upload documents and CSVs but cannot delete parts
+- **Engineer**: Can add/edit parts and upload documents
+- **Technician**: Can view all parts and edit basic information
+- **Viewer**: Can only view parts and documents
+
+### Working with Parts
+
+- **Viewing Parts**: Use the tree view in the dashboard to navigate the parts hierarchy
+- **Adding Parts**: Use the "Add Part" button in the toolbar
+- **Editing Parts**: Click on a part in the tree view, then click "Edit"
+- **Marking Parts**: Select a part and use the "Marker" functionality
+
+### Document Management
+
+- **Viewing Documents**: Click on a part to see its associated documents
+- **Adding Documents**: Click "Upload Document" from a part's detail view
+- **Supported Formats**: Images (.jpg, .png, .gif), PDFs, technical drawings, and more
+
+### CSV Import/Export
+
+- **Importing**: Use the "Import CSV" button in the toolbar
+- **Exporting**: Use the "Save List" button to export all parts or filtered parts
+
+## Production Deployment
+
+For production deployment, make these additional changes:
+
+1. Set `DEBUG=False` in your environment variables or settings.py
+2. Configure a proper web server like Nginx with Gunicorn
+3. Set up a production-ready PostgreSQL database
+4. Configure proper email settings for password reset functionality
+5. Set up a backup system for the database and uploaded documents
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

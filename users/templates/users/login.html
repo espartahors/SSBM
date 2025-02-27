@@ -1,0 +1,29 @@
+<!-- users/templates/users/login.html -->
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login - Bomdels{% endblock %}
+
+{% block content %}
+<div class="auth-form-container">
+    <h2 class="mb-4 text-center">Login to Bomdels</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {{ form|crispy }}
+        
+        <div class="d-grid mt-4 mb-3">
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+        
+        <div class="text-center">
+            <small>
+                <a href="{% url 'password_reset' %}">Forgot Password?</a>
+            </small>
+            <div class="mt-2">
+                Don't have an account? <a href="{% url 'register' %}">Register</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+# requirements.txt
+
+# Django
+Django==4.2.5
+psycopg2-binary==2.9.6  # PostgreSQL adapter
+
+# Forms and UI
+django-crispy-forms==2.0
+crispy-bootstrap4==2022.1
+
+# Image processing
+Pillow>=10.0.0  # Updated from 9.5.0 which has installation issues
+
+# Development
+django-debug-toolbar==4.2.0
+
+# Production (when deploying)
+gunicorn==21.2.0
+whitenoise==6.5.0  # For serving static files

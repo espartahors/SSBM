@@ -1,0 +1,4 @@
+<!-- marker.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path d="M2,2h12v4H6v8H2V2z M10,6h4v8h-8v-4h4z" fill="#f0b000"/>
+</svg>

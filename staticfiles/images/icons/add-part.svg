@@ -1,0 +1,5 @@
+<!-- add-part.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path d="M2,2h12v12H2V2z M4,4v8h8V4H4z" fill="#0066cc"/>
+  <path d="M7,5v2H5v2h2v2h2V9h2V7H9V5H7z" fill="#0066cc"/>
+</svg>

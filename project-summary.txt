@@ -1,0 +1,89 @@
+# Bomdels - Django Parts Management System Summary
+
+## Project Overview
+
+This Django application is a comprehensive reimagining of the Bomdels software shown in the PDF documentation. It maintains the same core functionality for managing parts in a hierarchical structure while adding:
+
+1. User authentication and role-based permissions
+2. Database storage with PostgreSQL
+3. Document management
+4. CSV import/export
+5. Full CRUD operations on all entities
+6. Activity tracking for audit purposes
+
+## Core Components
+
+### 1. User Management (`users` app)
+- Custom user profiles with roles and permissions
+- Role-based access control (Admin, Manager, Engineer, Technician, Viewer)
+- Activity logging for auditing
+- User registration, login, and profile management
+
+### 2. Parts Management (`parts` app)
+- Hierarchical parts structure (parent-child relationships)
+- Interactive tree view for navigating parts
+- Part marking system (similar to the original Bomdels)
+- Complete CRUD functionality for parts
+- Search capabilities
+
+### 3. Document Management
+- Upload and associate documents with parts
+- Support for multiple document types (images, PDFs, etc.)
+- Document preview in the application
+- Document metadata management
+
+### 4. CSV Import/Export
+- Import parts from CSV files with different update modes
+- Export parts to CSV for external processing
+- Import logging for tracking changes
+
+## Technical Implementation Details
+
+### Database Models
+- **User Models**: Extended Django's User model with UserProfile for roles and permissions
+- **Part Models**: Hierarchical structure with self-referencing foreign keys
+- **Document Models**: File storage with metadata
+- **Activity Models**: Tracking all user actions
+
+### Views and Templates
+- Class-based views for CRUD operations
+- Function-based views for specialized operations like marking
+- Responsive templates with Bootstrap integration
+- Interactive JavaScript for tree view and document handling
+
+### API Endpoints
+- JSON endpoints for tree data
+- Document viewing endpoints
+- Marker operations
+
+### Security Features
+- Permission-based access control
+- Document validation
+- CSRF protection
+- Secure password handling
+
+## Extension Points
+
+The application has been designed with extensibility in mind:
+
+1. **Additional Document Types**: The document handler can be extended to support more file types
+2. **Reporting Module**: A reporting system could be added to generate reports on parts
+3. **Notifications**: Email or in-app notifications could be added
+4. **Mobile App Integration**: API endpoints could be extended for mobile app use
+5. **Integration with ERP/MES Systems**: The import/export functionality provides a foundation
+
+## Deployment Considerations
+
+- PostgreSQL database setup
+- Static and media file configuration
+- Environment variables for sensitive information
+- Production server configuration (Nginx + Gunicorn)
+- Backup strategies
+
+## Future Enhancements
+
+1. **Advanced Search**: Implement Elasticsearch for more powerful search capabilities
+2. **Version Control**: Add version control for parts and documents
+3. **Approval Workflows**: Implement approval workflows for part changes
+4. **Parts Relationships**: Add more complex relationship types beyond parent-child
+5. **API Expansion**: Create a comprehensive RESTful API with authentication
