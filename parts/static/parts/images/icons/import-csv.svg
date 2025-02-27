@@ -1,0 +1,5 @@
+<!-- import-csv.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path d="M2,2v12h12V6H10V2H2z M4,4h4v2H4V4z M8,10V8h4v2H8z M4,8h3v4H4V8z" fill="#0066cc"/>
+  <path d="M10,4l4,0v2h-4V4z" fill="#0066cc"/>
+</svg>

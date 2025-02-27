@@ -1,0 +1,4 @@
+<!-- extract-drawing.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path d="M2,2h12v12H14L10,10L6,14H2V2z M4,4v8h3l5-5l-4-4H4zC6,5.5,7,6.5,8,5.5z" fill="#555"/>
+</svg>

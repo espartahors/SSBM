@@ -1,0 +1,134 @@
+<!-- parts/templates/parts/import_csv.html -->
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Import Parts from CSV | Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Import Parts from CSV</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5>CSV Format Guidelines</h5>
+                        <p>The CSV file should have the following columns:</p>
+                        <ul>
+                            <li><strong>ID</strong> - Unique identifier for the part</li>
+                            <li><strong>Name</strong> - Part name or description</li>
+                            <li><strong>Level</strong> - Hierarchical level (0 for root items)</li>
+                            <li><strong>Info</strong> - Additional information (optional)</li>
+                            <li><strong>DocRef</strong> - Document reference (optional)</li>
+                        </ul>
+                        <p>Example:</p>
+                        <pre>ID,Name,Level,Info,DocRef
+P001,Assembly A,0,Main Assembly,assembly_a.jpg
+P002,Subassembly A1,1,Electrical Components,
+P003,Component A1.1,2,Capacitor 10uF,</pre>
+                    </div>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {{ form.csv_file|as_crispy_field }}
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Update Mode</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    {% for radio in form.update_mode %}
+                                    <div class="form-check">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                            {{ radio.choice_label }}
+                                        </label>
+                                        {% if radio.choice_value == 'add_only' %}
+                                        <small class="form-text text-muted">Only add new parts, skip existing ones</small>
+                                        {% elif radio.choice_value == 'update_existing' %}
+                                        <small class="form-text text-muted">Add new parts and update existing ones</small>
+                                        {% elif radio.choice_value == 'replace_all' %}
+                                        <small class="form-text text-muted">Warning: This will delete all existing parts first!</small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                {{ form.skip_errors }}
+                                <label class="form-check-label" for="{{ form.skip_errors.id_for_label }}">
+                                    Skip errors and continue importing
+                                </label>
+                                <small class="form-text text-muted">
+                                    If checked, the import will continue even if some rows have errors
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Import CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if user.profile.role == 'admin' or user.profile.role == 'manager' %}
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Imports</h5>
+                    <a href="{% url 'import-logs' %}" class="btn btn-sm btn-outline-secondary">View All Logs</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>File</th>
+                                    <th>User</th>
+                                    <th>Date</th>
+                                    <th>Added</th>
+                                    <th>Updated</th>
+                                    <th>Skipped</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in import_logs|slice:":5" %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'import-log-detail' log.id %}">{{ log.file_name }}</a>
+                                    </td>
+                                    <td>{{ log.imported_by.username }}</td>
+                                    <td>{{ log.imported_at|date:"M d, Y H:i" }}</td>
+                                    <td><span class="badge bg-success">{{ log.parts_added }}</span></td>
+                                    <td><span class="badge bg-info">{{ log.parts_updated }}</span></td>
+                                    <td><span class="badge bg-warning">{{ log.parts_skipped }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3">
+                                        <p class="text-muted mb-0">No import logs available.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

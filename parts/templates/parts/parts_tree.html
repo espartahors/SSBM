@@ -1,0 +1,143 @@
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Parts Tree{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Left side: Parts tree -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Parts Structure</h5>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <input type="text" id="treeSearchInput" class="form-control" placeholder="Search parts...">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="partsTree" class="tree-container overflow-auto" style="max-height: 600px;">
+                        <!-- Tree will be loaded here by JavaScript -->
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right side: Part details -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Part Details</h5>
+                </div>
+                <div class="card-body">
+                    <div id="partDetails">
+                        <div class="text-center py-5">
+                            <p class="text-muted">Select a part from the tree to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Document viewer -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div id="documentViewer">
+                        <div class="text-center py-5">
+                            <p class="text-muted">Select a part to view associated documents</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status bar -->
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-1">
+                    <span id="statusBar" class="text-muted">Ready</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Marker tools modal -->
+<div class="modal fade" id="markerToolsModal" tabindex="-1" role="dialog" aria-labelledby="markerToolsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markerToolsModalLabel">Marker Tools</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Marker Forms -->
+                <form id="addMarkerForm" action="" method="post" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" id="markPartId" name="part" value="">
+                    <div class="form-group">
+                        <label for="markerNote">Note (optional):</label>
+                        <textarea class="form-control" id="markerNote" name="note" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Marker</button>
+                </form>
+                
+                <form id="removeMarkerForm" action="" method="post" style="display: none;">
+                    {% csrf_token %}
+                    <p>This part is currently marked. Do you want to remove the marker?</p>
+                    <button type="submit" class="btn btn-danger">Remove Marker</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store for selected part
+    let selectedPart = null;
+    
+    // Initialize tree on document load
+    $(document).ready(function() {
+        // Get tree data from server
+        initPartsTree("{% url 'part-tree-json' %}", "{{ show_tree_expanded|yesno:'true,false' }}");
+        
+        // Attach search button event
+        $('#searchBtn').click(function() {
+            const searchTerm = $('#treeSearchInput').val();
+            if (searchTerm) {
+                searchParts(searchTerm);
+            }
+        });
+        
+        // Allow search on Enter key
+        $('#treeSearchInput').keypress(function(e) {
+            if (e.which === 13) {
+                const searchTerm = $(this).val();
+                if (searchTerm) {
+                    searchParts(searchTerm);
+                }
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+<script src="{% static 'parts/js/tree.js' %}"></script>
+<script src="{% static 'parts/js/document_viewer.js' %}"></script>
+<script src="{% static 'parts/js/document_viewer.js' %}"></script>
+{% endblock %}

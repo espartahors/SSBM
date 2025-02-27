@@ -1,0 +1,46 @@
+<!-- parts/templates/parts/part_form.html -->
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} | Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.part_id|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.level|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.name|as_crispy_field }}
+                        {{ form.parent|as_crispy_field }}
+                        {{ form.info|as_crispy_field }}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% if part.id %}{% url 'part-detail' part.id %}{% else %}{% url 'part-list' %}{% endif %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if part.id %}Update Part{% else %}Create Part{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

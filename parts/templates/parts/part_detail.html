@@ -1,0 +1,276 @@
+<!-- parts/templates/parts/part_detail.html -->
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}{{ part.part_id }} - {{ part.name }} | Bomdels{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Part Details</h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-columns"></i> Tree View
+            </a>
+            <a href="{% url 'part-list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-list"></i> All Parts
+            </a>
+            {% if can_edit_part %}
+            <a href="{% url 'part-update' part.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit Part
+            </a>
+            {% endif %}
+            {% if can_delete_part %}
+            <a href="{% url 'part-delete' part.id %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete Part
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-7">
+            <!-- Part Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Part Information</h5>
+                    <div>
+                        {% if is_marked %}
+                        <form method="post" action="{% url 'unmark-part' part.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="bi bi-bookmark-check-fill"></i> Unmark
+                            </button>
+                        </form>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#markPartModal">
+                            <i class="bi bi-bookmark"></i> Mark
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 150px;">Part ID:</th>
+                            <td>{{ part.part_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Name:</th>
+                            <td>{{ part.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Level:</th>
+                            <td>{{ part.level }}</td>
+                        </tr>
+                        <tr>
+                            <th>Parent Part:</th>
+                            <td>
+                                {% if parent %}
+                                <a href="{% url 'part-detail' parent.id %}">{{ parent.part_id }} - {{ parent.name }}</a>
+                                {% else %}
+                                <span class="text-muted">No parent (root part)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Additional Info:</th>
+                            <td>
+                                {% if part.info %}
+                                {{ part.info|linebreaks }}
+                                {% else %}
+                                <span class="text-muted">No additional information</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Created By:</th>
+                            <td>{{ part.created_by.username }} on {{ part.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Modified:</th>
+                            <td>{{ part.modified_by.username }} on {{ part.modified_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Child Parts -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Child Parts</h5>
+                    <span class="badge bg-primary">{{ children.count }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if children %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Level</th>
+                                    <th>Docs</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for child in children %}
+                                <tr>
+                                    <td>{{ child.part_id }}</td>
+                                    <td>
+                                        <a href="{% url 'part-detail' child.id %}">{{ child.name }}</a>
+                                    </td>
+                                    <td>{{ child.level }}</td>
+                                    <td>
+                                        {% if child.has_documents %}
+                                        <span class="badge bg-info">{{ child.documents.count }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'part-detail' child.id %}" class="btn btn-outline-primary" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if can_edit_part %}
+                                            <a href="{% url 'part-update' child.id %}" class="btn btn-outline-secondary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">This part has no child parts.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if can_add_parts %}
+                <div class="card-footer">
+                    <a href="{% url 'part-create' %}?parent={{ part.id }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add Child Part
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-5">
+            <!-- Documents -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Documents</h5>
+                    {% if can_add_document %}
+                    <a href="{% url 'document-create-for-part' part.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> Upload Document
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if documents|length %}
+                    <div class="list-group">
+                        {% for doc in documents %}
+                        <a href="{{ doc.file.url }}" target="_blank" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ doc.title }}</h6>
+                                <small>{{ doc.get_document_type_display }}</small>
+                            </div>
+                            {% if doc.description %}
+                            <p class="mb-1 small">{{ doc.description|truncatechars:100 }}</p>
+                            {% endif %}
+                            <small class="text-muted">
+                                <i class="bi bi-paperclip"></i> {{ doc.filename }} &bull;
+                                <i class="bi bi-calendar"></i> {{ doc.uploaded_at|date:"M d, Y" }} &bull;
+                                <i class="bi bi-person"></i> {{ doc.uploaded_by.username }}
+                            </small>
+                            
+                            {% if can_add_document %}
+                            <div class="mt-2">
+                                <a href="{% url 'document-update' doc.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                <a href="{% url 'document-delete' doc.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </div>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No documents available for this part.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Document Preview -->
+            {% if documents|length %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Document Preview</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="documentViewer" class="document-viewer">
+                        <p class="text-center text-muted p-4">Select a document to preview</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Mark Part Modal -->
+{% if not is_marked %}
+<div class="modal fade" id="markPartModal" tabindex="-1" aria-labelledby="markPartModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'mark-part' part.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="markPartModalLabel">Mark Part</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Add a note about why you're marking this part (optional):</p>
+                    <input type="hidden" name="part" value="{{ part.id }}">
+                    <textarea name="note" class="form-control" rows="3" placeholder="Optional note"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Mark Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'parts/js/document_viewer.js' %}"></script>
+{% if documents %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up document links to show preview
+        const documentLinks = document.querySelectorAll('.list-group-item');
+        documentLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+                showDocumentPreview(url);
+            });
+        });
+        
+        // Show the first document by default
+        if (documentLinks.length > 0) {
+            documentLinks[0].click();
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

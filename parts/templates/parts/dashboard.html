@@ -1,0 +1,227 @@
+<!-- parts/templates/parts/dashboard.html -->
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Parts Dashboard - Bomdels{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="toolbar-btn" title="View Drawing" id="viewDrawingBtn">
+            <img src="{% static 'parts/images/icons/view-drawing.svg' %}" alt="View Drawing">
+            View Drawing
+        </button>
+        
+        <button class="toolbar-btn" title="Extract Drawing" id="extractDrawingBtn">
+            <img src="{% static 'parts/images/icons/extract-drawing.svg' %}" alt="Extract Drawing">
+            Extract Drawing
+        </button>
+        
+        <button class="toolbar-btn" title="Marker" id="markerBtn">
+            <img src="{% static 'parts/images/icons/marker.svg' %}" alt="Marker">
+            Marker
+        </button>
+        
+        <button class="toolbar-btn" title="Clean Marker" id="cleanMarkerBtn">
+            <img src="{% static 'parts/images/icons/clean-marker.svg' %}" alt="Clean Marker">
+            Clean Marker
+        </button>
+        
+        <button class="toolbar-btn" title="Clean All Markers" id="cleanAllMarkersBtn">
+            <img src="{% static 'parts/images/icons/clean-all-markers.svg' %}" alt="Clean All Markers">
+            Clean All Markers
+        </button>
+        
+        <button class="toolbar-btn" title="Save List" id="saveListBtn">
+            <img src="{% static 'parts/images/icons/save-list.svg' %}" alt="Save List">
+            Save List
+        </button>
+        
+        {% if can_upload_csv %}
+        <a href="{% url 'import-csv' %}" class="toolbar-btn" title="Import CSV">
+            <img src="{% static 'parts/images/icons/import-csv.svg' %}" alt="Import CSV">
+            Import CSV
+        </a>
+        {% endif %}
+        
+        <a href="{% url 'export-csv' %}" class="toolbar-btn" title="Export CSV">
+            <img src="{% static 'parts/images/icons/export-csv.svg' %}" alt="Export CSV">
+            Export CSV
+        </a>
+        
+        {% if can_add_parts %}
+        <a href="{% url 'part-create' %}" class="toolbar-btn" title="Add Part">
+            <img src="{% static 'parts/images/icons/add-part.svg' %}" alt="Add Part">
+            Add Part
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Marker Panel (initially hidden) -->
+    <div id="markerPanel" class="marker-container" style="display: none;">
+        <form id="addMarkerForm" method="post" action="{% url 'mark-part' 0 %}">
+            {% csrf_token %}
+            <input type="hidden" id="markPartId" name="part" value="">
+            <input type="text" name="note" placeholder="Optional note" class="form-control">
+            <button type="submit" class="btn btn-warning btn-sm">Add Marker</button>
+        </form>
+        <form id="removeMarkerForm" method="post" action="{% url 'unmark-part' 0 %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Remove Marker</button>
+        </form>
+        <form method="post" action="{% url 'clear-all-marks' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Remove All Markers</button>
+        </form>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Left Panel (Tree View) -->
+        <div class="left-panel">
+            <div class="panel-header">Structure</div>
+            
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search parts..." class="form-control">
+                <button id="searchBtn" class="btn btn-primary btn-sm">Find</button>
+            </div>
+            
+            <!-- Tree Container -->
+            <div class="tree-container" id="treeContainer">
+                <div id="partsTree"></div>
+            </div>
+        </div>
+        
+        <!-- Right Panel (Details) -->
+        <div class="right-panel">
+            <div class="panel-header">Part Details &amp; Documents</div>
+            
+            <!-- Top Section (Part Details) -->
+            <div class="right-top" id="partDetails">
+                <div class="component-info">
+                    <div class="component-info-header">Parts Management System</div>
+                    <div class="component-info-content">
+                        <p>Welcome to the Bomdels Parts Management System.</p>
+                        <p>Select a part from the tree view to see its details.</p>
+                        
+                        <h5>Quick Actions:</h5>
+                        <ul>
+                            <li><a href="{% url 'part-list' %}">View all parts in list format</a></li>
+                            <li><a href="{% url 'marked-parts' %}">View your marked parts</a></li>
+                            {% if can_add_parts %}
+                            <li><a href="{% url 'part-create' %}">Add a new part</a></li>
+                            {% endif %}
+                            {% if can_upload_csv %}
+                            <li><a href="{% url 'import-csv' %}">Import parts from CSV</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Section (Document Viewer) -->
+            <div class="right-bottom">
+                <div class="document-viewer" id="documentViewer">
+                    <p>Document preview will appear here when a part is selected.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+        Ready
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'parts/js/tree.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the parts tree
+        initPartsTree('{% url "part-tree-json" %}', '{{ show_tree_expanded|yesno:"true,false" }}');
+        
+        // Toggle marker panel
+        document.getElementById('markerBtn').addEventListener('click', function() {
+            const markerPanel = document.getElementById('markerPanel');
+            markerPanel.style.display = markerPanel.style.display === 'none' ? 'flex' : 'none';
+        });
+        
+        // View Drawing button
+        document.getElementById('viewDrawingBtn').addEventListener('click', function() {
+            const selectedPart = getSelectedPart();
+            if (selectedPart) {
+                loadDocuments(selectedPart.id);
+            } else {
+                updateStatus('Please select a part first');
+            }
+        });
+        
+        // Save List button (Export)
+        document.getElementById('saveListBtn').addEventListener('click', function() {
+            window.location.href = '{% url "export-csv" %}';
+        });
+        
+        // Clean Marker button
+        document.getElementById('cleanMarkerBtn').addEventListener('click', function() {
+            const selectedPart = getSelectedPart();
+            if (selectedPart) {
+                if (selectedPart.marked) {
+                    // Set the form action and submit
+                    const form = document.getElementById('removeMarkerForm');
+                    form.action = `/parts/${selectedPart.id}/unmark/`;
+                    form.submit();
+                } else {
+                    updateStatus('Selected part is not marked');
+                }
+            } else {
+                updateStatus('Please select a part first');
+            }
+        });
+        
+        // Clean All Markers button
+        document.getElementById('cleanAllMarkersBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove all markers?')) {
+                // Submit the form to clear all marks
+                document.querySelector('form[action="{% url "clear-all-marks" %}"]').submit();
+            }
+        });
+        
+        // Add marker form submission
+        document.getElementById('addMarkerForm').addEventListener('submit', function(e) {
+            const selectedPart = getSelectedPart();
+            if (!selectedPart) {
+                e.preventDefault();
+                updateStatus('Please select a part first');
+                return false;
+            }
+            
+            // Update the form action and part ID
+            this.action = `/parts/${selectedPart.id}/mark/`;
+            document.getElementById('markPartId').value = selectedPart.id;
+        });
+        
+        // Search functionality
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (searchTerm) {
+                searchParts(searchTerm);
+            }
+        });
+        
+        // Allow searching on Enter key
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+    });
+    
+    function updateStatus(message) {
+        document.getElementById('statusBar').textContent = message;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+<!-- parts/templates/parts/document_form.html -->
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if document.id %}Edit Document{% else %}Upload Document{% endif %} | Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        {% if document.id %}
+                        Edit Document: {{ document.title }}
+                        {% else %}
+                        Upload New Document
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if part %}
+                        <!-- If part is pre-selected, show a non-editable field -->
+                        <div class="mb-3">
+                            <label class="form-label">Part</label>
+                            <input type="text" class="form-control" value="{{ part.part_id }} - {{ part.name }}" disabled>
+                            <input type="hidden" name="part" value="{{ part.id }}">
+                        </div>
+                        {% else %}
+                        <!-- Otherwise show the part selection field -->
+                        {{ form.part|as_crispy_field }}
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                {{ form.title|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.document_type|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.description|as_crispy_field }}
+                        
+                        {% if not document.id %}
+                        <!-- Only show file field for new documents -->
+                        {{ form.file|as_crispy_field }}
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Supported file types:</strong> 
+                                JPG, JPEG, PNG, GIF, PDF, TXT, CSV, DOCX, XLSX, DWG, DXF<br>
+                                <strong>Maximum file size:</strong> 20MB
+                            </small>
+                        </div>
+                        {% else %}
+                        <!-- For existing documents, show current file -->
+                        <div class="mb-3">
+                            <label class="form-label">Current File</label>
+                            <div>
+                                <a href="{{ document.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-file-earmark"></i> {{ document.filename }}
+                                </a>
+                                <small class="text-muted ms-2">
+                                    Uploaded on {{ document.uploaded_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            <small class="form-text text-muted">
+                                To replace the file, please delete this document and upload a new one.
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% if part %}{% url 'part-detail' part.id %}{% elif document.id %}{% url 'part-detail' document.part.id %}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if document.id %}Update Document{% else %}Upload Document{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
