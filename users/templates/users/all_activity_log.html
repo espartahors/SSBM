@@ -1,0 +1,46 @@
+<!-- users/templates/users/all_activity_log.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}System Activity Log - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">System Activity Log</h2>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">All User Activity</h3>
+        </div>
+        <div class="card-body">
+            {% if activities %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Description</th>
+                                <th>Date/Time</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>{{ activity.user.username }}</td>
+                                <td>{{ activity.activity_type }}</td>
+                                <td>{{ activity.description }}</td>
+                                <td>{{ activity.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>{{ activity.ip_address|default:"N/A" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No activity recorded in the system.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

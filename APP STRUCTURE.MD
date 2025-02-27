@@ -1,7 +1,7 @@
 # Project Structure Overview
-SSBModel/           # Main Django project folder
+bomdels_project/           # Main Django project folder
 ├── manage.py
-├── SSBModel/       # Project configuration
+├── bomdels_project/       # Project configuration
 │   ├── __init__.py
 │   ├── settings.py
 │   ├── urls.py

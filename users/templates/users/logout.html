@@ -1,0 +1,18 @@
+<!-- users/templates/users/logout.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}Logged Out - Bomdels{% endblock %}
+
+{% block content %}
+<div class="auth-form-container">
+    <h2 class="mb-4 text-center">Logged Out</h2>
+    
+    <div class="alert alert-success text-center">
+        <p>You have been successfully logged out.</p>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'login' %}" class="btn btn-primary">Log In Again</a>
+    </div>
+</div>
+{% endblock %}

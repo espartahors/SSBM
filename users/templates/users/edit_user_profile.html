@@ -1,0 +1,43 @@
+<!-- users/templates/users/edit_user_profile.html -->
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit User - {{ user_obj.username }} - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Edit User: {{ user_obj.username }}</h3>
+                    <div>
+                        <a href="{% url 'user-detail' user_obj.id %}" class="btn btn-sm btn-secondary">Back to Details</a>
+                        <a href="{% url 'user-list' %}" class="btn btn-sm btn-secondary">Back to List</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">User Information</h5>
+                                {{ user_form|crispy }}
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Role and Permissions</h5>
+                                {{ profile_form|crispy }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary">Update User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

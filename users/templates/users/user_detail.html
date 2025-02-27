@@ -1,0 +1,136 @@
+<!-- users/templates/users/user_detail.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}User Details - {{ user_obj.username }} - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">User Details: {{ user_obj.username }}</h3>
+                    <div>
+                        <a href="{% url 'edit-user-profile' user_obj.id %}" class="btn btn-sm btn-primary">Edit User</a>
+                        <a href="{% url 'user-list' %}" class="btn btn-sm btn-secondary">Back to List</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Personal Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Username:</dt>
+                                <dd class="col-sm-8">{{ user_obj.username }}</dd>
+                                
+                                <dt class="col-sm-4">Full Name:</dt>
+                                <dd class="col-sm-8">{{ user_obj.get_full_name }}</dd>
+                                
+                                <dt class="col-sm-4">Email:</dt>
+                                <dd class="col-sm-8">{{ user_obj.email }}</dd>
+                                
+                                <dt class="col-sm-4">Date Joined:</dt>
+                                <dd class="col-sm-8">{{ user_obj.date_joined|date:"M d, Y" }}</dd>
+                                
+                                <dt class="col-sm-4">Last Login:</dt>
+                                <dd class="col-sm-8">{{ user_obj.last_login|date:"M d, Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Role and Permissions</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Role:</dt>
+                                <dd class="col-sm-8">{{ user_obj.profile.get_role_display }}</dd>
+                                
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    {% if user_obj.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Permissions:</dt>
+                                <dd class="col-sm-8">
+                                    <ul class="list-unstyled">
+                                        {% if user_obj.profile.can_add_parts %}
+                                            <li><i class="fas fa-check text-success"></i> Add Parts</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> Add Parts</li>
+                                        {% endif %}
+                                        
+                                        {% if user_obj.profile.can_edit_parts %}
+                                            <li><i class="fas fa-check text-success"></i> Edit Parts</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> Edit Parts</li>
+                                        {% endif %}
+                                        
+                                        {% if user_obj.profile.can_delete_parts %}
+                                            <li><i class="fas fa-check text-success"></i> Delete Parts</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> Delete Parts</li>
+                                        {% endif %}
+                                        
+                                        {% if user_obj.profile.can_view_documents %}
+                                            <li><i class="fas fa-check text-success"></i> View Documents</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> View Documents</li>
+                                        {% endif %}
+                                        
+                                        {% if user_obj.profile.can_add_documents %}
+                                            <li><i class="fas fa-check text-success"></i> Add Documents</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> Add Documents</li>
+                                        {% endif %}
+                                        
+                                        {% if user_obj.profile.can_upload_csv %}
+                                            <li><i class="fas fa-check text-success"></i> Upload CSV</li>
+                                        {% else %}
+                                            <li><i class="fas fa-times text-danger"></i> Upload CSV</li>
+                                        {% endif %}
+                                    </ul>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    {% if activities %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Description</th>
+                                        <th>Date/Time</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for activity in activities %}
+                                    <tr>
+                                        <td>{{ activity.activity_type }}</td>
+                                        <td>{{ activity.description }}</td>
+                                        <td>{{ activity.timestamp|date:"M d, Y H:i" }}</td>
+                                        <td>{{ activity.ip_address|default:"N/A" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No activity recorded for this user.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
