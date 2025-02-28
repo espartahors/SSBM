@@ -1,7 +1,7 @@
 # requirements.txt
 
 # Django
-Django==4.2.5
+Django==4.2.18
 psycopg2-binary==2.9.6  # PostgreSQL adapter
 
 # Forms and UI
