@@ -19,12 +19,16 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SSBModel.settings')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='parts/', permanent=False)),  # Redirect root to parts
     path('users/', include('users.urls')),
     path('parts/', include('parts.urls')),
+    path('equipment/', include('equipment.urls')),
 ]
 
 # Add URL patterns for media files

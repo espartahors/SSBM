@@ -1,0 +1,98 @@
+{% extends 'parts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Import Equipment Hierarchy - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Import Equipment Hierarchy from CSV</h3>
+                    <a href="{% url 'equipment-tree' %}" class="btn btn-secondary">Back to Tree</a>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="mt-4">
+                            <h4>CSV Format Requirements</h4>
+                            <p>Your CSV file should have the following columns:</p>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            {% for column in csv_columns %}
+                                            <th>{{ column }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>EAF</td>
+                                            <td>1</td>
+                                            <td>Electric Arc Furnace</td>
+                                            <td>Main production furnace</td>
+                                            <td>Brand XYZ</td>
+                                            <td>DOC-123</td>
+                                        </tr>
+                                        <tr>
+                                            <td>VOUT</td>
+                                            <td>2</td>
+                                            <td>Vault</td>
+                                            <td>Furnace vault</td>
+                                            <td>Brand XYZ</td>
+                                            <td>DOC-124</td>
+                                        </tr>
+                                        <tr>
+                                            <td>CNT</td>
+                                            <td>3</td>
+                                            <td>Controller</td>
+                                            <td>Vault controller</td>
+                                            <td>Brand XYZ</td>
+                                            <td>DOC-125</td>
+                                        </tr>
+                                        <tr>
+                                            <td>PWR</td>
+                                            <td>2</td>
+                                            <td>Power Supply</td>
+                                            <td>Main power unit</td>
+                                            <td>Brand ABC</td>
+                                            <td>DOC-126</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3">
+                                <h5 class="alert-heading">How the Hierarchy Works</h5>
+                                <p>This import uses the Level column to determine the parent-child relationship:</p>
+                                <ul>
+                                    <li><strong>Level 1:</strong> Top-level equipment (no parent)</li>
+                                    <li><strong>Level 2:</strong> Child of the previous Level 1 item</li>
+                                    <li><strong>Level 3:</strong> Child of the previous Level 2 item</li>
+                                    <li>And so on...</li>
+                                </ul>
+                                <p>The final equipment codes will be hierarchical, including parent codes:</p>
+                                <ul>
+                                    <li>EAF (Level 1) → Code: <strong>EAF</strong></li>
+                                    <li>VOUT (Level 2) → Code: <strong>EAF-VOUT</strong></li>
+                                    <li>CNT (Level 3) → Code: <strong>EAF-VOUT-CNT</strong></li>
+                                    <li>PWR (Level 2) → Code: <strong>EAF-PWR</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary">Upload and Import</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

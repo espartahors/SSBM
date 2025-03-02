@@ -1,0 +1,144 @@
+<!-- equipment/templates/equipment/equipment_list.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}Equipment List - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Equipment List</h2>
+        <div>
+            <a href="{% url 'equipment-create' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add Equipment
+            </a>
+            <a href="{% url 'equipment-tree' %}" class="btn btn-primary">
+                <i class="fas fa-sitemap"></i> Tree View
+            </a>
+            <a href="{% url 'import-level-csv' %}" class="btn btn-info">
+                <i class="fas fa-file-import"></i> Import CSV
+            </a>
+            {% comment %} <a href="{% url 'export-equipment-csv' %}" class="btn btn-secondary">
+                <i class="fas fa-file-export"></i> Export CSV
+            </a> {% endcomment %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" id="equipment-search" class="form-control" placeholder="Search equipment...">
+                </div>
+                <div class="col-md-3">
+                    <select id="status-filter" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="maintenance">Under Maintenance</option>
+                        <option value="decommissioned">Decommissioned</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="category-filter" class="form-control">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if equipment_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="equipment-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipment in equipment_list %}
+                            <tr data-status="{{ equipment.status }}" data-category="{{ equipment.category.id|default:'' }}">
+                                <td><code>{{ equipment.code }}</code></td>
+                                <td>
+                                    {% if equipment.parent %}
+                                    <span class="text-muted">└─ </span>
+                                    {% endif %}
+                                    {{ equipment.name }}
+                                </td>
+                                <td>{{ equipment.category.name|default:"--" }}</td>
+                                <td>
+                                    {% if equipment.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% elif equipment.status == 'inactive' %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% elif equipment.status == 'maintenance' %}
+                                    <span class="badge bg-warning">Maintenance</span>
+                                    {% elif equipment.status == 'decommissioned' %}
+                                    <span class="badge bg-danger">Decommissioned</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ equipment.location|default:"--" }}</td>
+                                <td>
+                                    <a href="{% url 'equipment-detail' equipment.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipment-update' equipment.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'equipment-delete' equipment.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">No equipment found. <a href="{% url 'equipment-create' %}">Add some equipment</a> or <a href="{% url 'import-equipment-csv' %}">import from CSV</a>.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('equipment-search');
+        const statusFilter = document.getElementById('status-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const table = document.getElementById('equipment-table');
+        const rows = table ? table.querySelectorAll('tbody tr') : [];
+        
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const categoryValue = categoryFilter.value;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const status = row.dataset.status;
+                const category = row.dataset.category;
+                
+                const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+                const matchesStatus = statusValue === '' || status === statusValue;
+                const matchesCategory = categoryValue === '' || category === categoryValue;
+                
+                row.style.display = matchesSearch && matchesStatus && matchesCategory ? '' : 'none';
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', filterTable);
+        if (statusFilter) statusFilter.addEventListener('change', filterTable);
+        if (categoryFilter) categoryFilter.addEventListener('change', filterTable);
+    });
+</script>
+{% endblock %}

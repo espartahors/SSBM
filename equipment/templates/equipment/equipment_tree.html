@@ -1,0 +1,192 @@
+<!-- equipment/templates/equipment/equipment_tree.html -->
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Equipment Hierarchy - Bomdels{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<style>
+    #equipment-tree {
+        max-height: 800px;
+        overflow-y: auto;
+    }
+    .jstree-anchor {
+        display: inline-block;
+        padding: 5px;
+    }
+    .equipment-code {
+        font-family: monospace;
+        padding: 2px 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        margin-left: 5px;
+        font-size: 0.9em;
+    }
+    .tree-actions {
+        margin-bottom: 15px;
+    }
+    .filter-panel {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Equipment Hierarchy</h2>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="filter-panel">
+                        <div class="form-group">
+                            <label for="search-equipment">Search:</label>
+                            <input type="text" id="search-equipment" class="form-control" placeholder="Search equipment...">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status-filter">Status:</label>
+                            <select id="status-filter" class="form-control">
+                                <option value="">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="maintenance">Under Maintenance</option>
+                                <option value="decommissioned">Decommissioned</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="category-filter">Category:</label>
+                            <select id="category-filter" class="form-control">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <button id="apply-filters" class="btn btn-primary mt-2">Apply Filters</button>
+                        <button id="reset-filters" class="btn btn-secondary mt-2">Reset</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="tree-actions">
+                        <a href="{% url 'equipment-create' %}" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-plus"></i> Add New Equipment
+                        </a>
+                        <a href="{% url 'import-equipment-csv' %}" class="btn btn-primary btn-block mb-2">
+                            <i class="fas fa-file-import"></i> Import CSV
+                        </a>
+                        <a href="{% url 'export-equipment-csv' %}" class="btn btn-info btn-block">
+                            <i class="fas fa-file-export"></i> Export CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Equipment Tree</h5>
+                </div>
+                <div class="card-body">
+                    <div id="notifications"></div>
+                    <div id="equipment-tree"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+
+<script>
+    // Variables that will be used by the tree.js script
+    const updatePositionUrl = "{% url 'update-equipment-position' %}";
+    const createEquipmentUrl = "{% url 'equipment-create' %}";
+    const editEquipmentUrl = "{% url 'equipment-update' 0 %}";
+    const deleteEquipmentUrl = "{% url 'equipment-delete' 0 %}";
+    const csrfToken = "{{ csrf_token }}";
+    
+    // Equipment tree data
+    const equipmentTreeData = [
+        {% for equipment in equipment_list %}
+        {
+            "id": "equipment_{{ equipment.id }}",
+            "parent": "{% if equipment.parent %}equipment_{{ equipment.parent.id }}{% else %}#{% endif %}",
+            "text": "{{ equipment.name }}{% if equipment.code %} <span class='equipment-code'>{{ equipment.code }}</span>{% endif %}",
+            "type": "equipment",
+            "state": {
+                "opened": false
+            },
+            "data": {
+                "status": "{{ equipment.status }}",
+                "category": "{{ equipment.category.id|default:'' }}",
+                "location": "{{ equipment.location }}"
+            }
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Initialize the jsTree
+    $(document).ready(function() {
+        $('#equipment-tree').jstree({
+            'core': {
+                'data': equipmentTreeData,
+                'check_callback': true
+            },
+            'plugins': ['dnd', 'contextmenu', 'state', 'types'],
+            'types': {
+                'equipment': {
+                    'icon': 'fas fa-cogs'
+                }
+            },
+            'contextmenu': {
+                'items': function(node) {
+                    return {
+                        'Create': {
+                            'label': 'Create',
+                            'action': function() {
+                                window.location.href = createEquipmentUrl;
+                            }
+                        },
+                        'Edit': {
+                            'label': 'Edit',
+                            'action': function() {
+                                window.location.href = editEquipmentUrl.replace('0', node.id.replace('equipment_', ''));
+                            }
+                        },
+                        'Delete': {
+                            'label': 'Delete',
+                            'action': function() {
+                                if (confirm('Are you sure you want to delete this equipment?')) {
+                                    window.location.href = deleteEquipmentUrl.replace('0', node.id.replace('equipment_', ''));
+                                }
+                            }
+                        }
+                    };
+                }
+            }
+        });
+    });
+</script>
+<script src="{% static 'equipment/js/tree.js' %}"></script>
+{% endblock %}

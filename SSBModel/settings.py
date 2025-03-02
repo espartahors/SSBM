@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SSBModel.settings')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,6 +47,10 @@ INSTALLED_APPS = [
     # Custom apps
     'users.apps.UsersConfig',
     'parts.apps.PartsConfig',
+
+    # equipments apps
+    'mptt',  # Add django-mptt
+    'equipment.apps.EquipmentConfig',  # Add equipment app
 ]
 
 MIDDLEWARE = [
@@ -61,8 +67,12 @@ ROOT_URLCONF = 'SSBModel.urls'
 
 TEMPLATES = [
     {
+        # 'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # 'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        # 'APP_DIRS': True,
+
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [],  # Empty list to only use app directories
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,6 +84,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'SSBModel.wsgi.application'
 

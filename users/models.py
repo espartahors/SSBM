@@ -95,6 +95,11 @@ class UserActivity(models.Model):
         ('document_delete', 'Deleted Document'),
         ('csv_import', 'Imported CSV'),
         ('csv_export', 'Exported CSV'),
+        ('equipment_create', 'Created Equipment'),
+        ('equipment_update', 'Updated Equipment'),
+        ('equipment_delete', 'Deleted Equipment'),
+        ('equipment_position_update', 'Updated Equipment Position'),
+        ('equipment_csv_import', 'Imported Equipment CSV'),
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities')

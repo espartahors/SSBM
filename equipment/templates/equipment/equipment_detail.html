@@ -1,0 +1,157 @@
+<!-- equipment/templates/equipment/equipment_detail.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}{{ equipment.name }} - Equipment Details{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Equipment Details</h2>
+        <div>
+            <a href="{% url 'equipment-update' equipment.id %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'equipment-delete' equipment.id %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+            <a href="{% url 'equipment-list' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Basic Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl>
+                                <dt>Equipment Code</dt>
+                                <dd><code class="bg-light p-1 rounded">{{ equipment.code }}</code></dd>
+                                
+                                <dt>Name</dt>
+                                <dd>{{ equipment.name }}</dd>
+                                
+                                <dt>Status</dt>
+                                <dd>
+                                    {% if equipment.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% elif equipment.status == 'inactive' %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% elif equipment.status == 'maintenance' %}
+                                    <span class="badge bg-warning">Maintenance</span>
+                                    {% elif equipment.status == 'decommissioned' %}
+                                    <span class="badge bg-danger">Decommissioned</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl>
+                                <dt>Category</dt>
+                                <dd>{{ equipment.category.name|default:"--" }}</dd>
+                                
+                                <dt>Location</dt>
+                                <dd>{{ equipment.location|default:"--" }}</dd>
+                                
+                                <dt>Last Updated</dt>
+                                <dd>{{ equipment.updated_at|date:"F j, Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5>Description</h5>
+                        <p>{{ equipment.description|default:"No description provided."|linebreaks }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Related Parts</h3>
+                </div>
+                <div class="card-body">
+                    {% if equipment.related_parts.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Part Number</th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for part in equipment.related_parts.all %}
+                                    <tr>
+                                        <td><code>{{ part.number }}</code></td>
+                                        <td>{{ part.name }}</td>
+                                        <td>{{ part.description|truncatechars:50 }}</td>
+                                        <td>
+                                            <a href="{% url 'part-detail' part.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No related parts associated with this equipment.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Hierarchy</h3>
+                </div>
+                <div class="card-body">
+                    {% if equipment.parent %}
+                        <div class="mb-3">
+                            <h5>Parent Equipment</h5>
+                            <a href="{% url 'equipment-detail' equipment.parent.id %}" class="d-flex align-items-center p-2 border rounded mb-2">
+                                <i class="fas fa-level-up-alt me-2"></i>
+                                <div>
+                                    <strong>{{ equipment.parent.name }}</strong>
+                                    <small class="d-block text-muted">{{ equipment.parent.code }}</small>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    {% if equipment.sub_equipment.exists %}
+                        <div>
+                            <h5>Sub-Equipment</h5>
+                            <ul class="list-group">
+                                {% for sub in equipment.sub_equipment.all %}
+                                <li class="list-group-item p-2">
+                                    <a href="{% url 'equipment-detail' sub.id %}" class="d-flex align-items-center text-decoration-none">
+                                        <i class="fas fa-level-down-alt me-2"></i>
+                                        <div>
+                                            <strong>{{ sub.name }}</strong>
+                                            <small class="d-block text-muted">{{ sub.code }}</small>
+                                        </div>
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No sub-equipment associated with this item.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

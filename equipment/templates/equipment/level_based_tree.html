@@ -1,0 +1,475 @@
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Equipment Hierarchy - Bomdels{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<style>
+    #equipment-tree {
+        max-height: 800px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    .equipment-code {
+        font-family: monospace;
+        padding: 2px 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        margin-left: 5px;
+        font-size: 0.9em;
+    }
+    .equipment-level {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        border-radius: 12px;
+        background-color: #f0f0f0;
+        margin-right: 5px;
+        font-size: 0.8em;
+        color: #444;
+    }
+    .equipment-details {
+        font-size: 0.9em;
+        color: #666;
+        margin-left: 5px;
+    }
+    .jstree-anchor {
+        width: 90%;
+        white-space: normal !important;
+        height: auto !important;
+        padding-right: 24px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Equipment Hierarchy</h2>
+        <div>
+            <a href="{% url 'import-level-csv' %}" class="btn btn-primary">
+                <i class="fas fa-file-import"></i> Import CSV
+            </a>
+            <a href="{% url 'equipment-list' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> List View
+            </a>
+            <a href="{% url 'equipment-create' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add Equipment
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Search & Filters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="search-input" class="form-label">Search:</label>
+                        <input type="text" id="search-input" class="form-control" placeholder="Search by code or name...">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="level-filter" class="form-label">Filter by Level:</label>
+                        <select id="level-filter" class="form-select">
+                            <option value="all">All Levels</option>
+                            <option value="1">Level 1 (Top Level)</option>
+                            <option value="2">Level 2</option>
+                            <option value="3">Level 3</option>
+                            <option value="4">Level 4</option>
+                            <option value="5">Level 5+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Show Details:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-fabricant">
+                            <label class="form-check-label" for="show-fabricant">Show Manufacturer</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-description">
+                            <label class="form-check-label" for="show-description">Show Description</label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button id="expand-all" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-expand-arrows-alt"></i> Expand All
+                        </button>
+                        <button id="collapse-all" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-compress-arrows-alt"></i> Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Legend</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="equipment-level">1</span>
+                        <span>Top Level Equipment</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="equipment-level">2</span>
+                        <span>Sub-Equipment</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="equipment-level">3+</span>
+                        <span>Components</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Active</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-wrench text-warning me-2"></i>
+                        <span>Under Maintenance</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-times-circle text-secondary me-2"></i>
+                        <span>Inactive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Equipment Tree</h5>
+                </div>
+                <div class="card-body">
+                    <div id="notifications"></div>
+                    <div id="equipment-tree"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Tree script loaded');
+        
+        // Check dependencies
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery is not loaded');
+            showError('jQuery is not loaded');
+            return;
+        }
+        
+        if (typeof $.jstree === 'undefined') {
+            console.error('jstree plugin is not loaded');
+            showError('jstree plugin is not loaded');
+            return;
+        }
+        
+        // Global variables
+        const treeContainer = document.getElementById('equipment-tree');
+        const searchInput = document.getElementById('search-input');
+        const levelFilter = document.getElementById('level-filter');
+        const showFabricant = document.getElementById('show-fabricant');
+        const showDescription = document.getElementById('show-description');
+        const expandAllBtn = document.getElementById('expand-all');
+        const collapseAllBtn = document.getElementById('collapse-all');
+        
+        // Tree data
+        const treeData = {{ tree_data_json|safe }};
+        console.log('Tree data loaded:', treeData.length, 'items');
+        
+        // Initialize jstree
+        try {
+            $(treeContainer).jstree({
+                'core': {
+                    'data': treeData,
+                    'themes': {
+                        'name': 'default',
+                        'responsive': true,
+                        'variant': 'large'
+                    },
+                    'multiple': false,
+                    'check_callback': function(operation, node, node_parent, node_position, more) {
+                        // This function controls which operations are permitted
+                        if (operation === 'move_node') {
+                            // Don't allow equipment to become its own parent
+                            if (more && more.dnd) {
+                                const nodeId = node.id.replace('equipment_', '');
+                                const parentId = node_parent.id.replace('equipment_', '');
+                                
+                                // Check if we're trying to move a node inside itself or any of its children
+                                let currentNode = node_parent;
+                                while (currentNode && currentNode.id !== '#') {
+                                    if (currentNode.id === node.id) {
+                                        return false;
+                                    }
+                                    currentNode = treeContainer.jstree(true).get_node(currentNode.parent);
+                                }
+                                
+                                return true;
+                            }
+                        }
+                        return true;
+                    }
+                },
+                'plugins': [
+                    'wholerow',   // Clickable row 
+                    'search',     // Search functionality
+                    'state',      // Remember open/closed state
+                    'dnd',        // Drag and drop
+                    'contextmenu', // Right-click menu
+                    'types'       // Custom node types
+                ],
+                'dnd': {
+                    'is_draggable': function(nodes) {
+                        // Allow dragging all nodes
+                        return true;
+                    }
+                },
+                'types': {
+                    'default': {
+                        'icon': 'fas fa-cube'
+                    },
+                    'active': {
+                        'icon': 'fas fa-check-circle text-success'
+                    },
+                    'inactive': {
+                        'icon': 'fas fa-times-circle text-secondary'
+                    },
+                    'maintenance': {
+                        'icon': 'fas fa-wrench text-warning'
+                    },
+                    'decommissioned': {
+                        'icon': 'fas fa-trash-alt text-danger'
+                    }
+                },
+                'contextmenu': {
+                    'items': function(node) {
+                        return {
+                            'view': {
+                                'label': 'View Details',
+                                'action': function() {
+                                    const equipmentId = node.id.replace('equipment_', '');
+                                    window.location.href = `/equipment/${equipmentId}/`;
+                                },
+                                'icon': 'fas fa-eye'
+                            },
+                            'add': {
+                                'label': 'Add Child',
+                                'action': function() {
+                                    const equipmentId = node.id.replace('equipment_', '');
+                                    window.location.href = `/equipment/new/?parent=${equipmentId}`;
+                                },
+                                'icon': 'fas fa-plus'
+                            },
+                            'edit': {
+                                'label': 'Edit',
+                                'action': function() {
+                                    const equipmentId = node.id.replace('equipment_', '');
+                                    window.location.href = `/equipment/${equipmentId}/edit/`;
+                                },
+                                'icon': 'fas fa-edit'
+                            },
+                            'delete': {
+                                'label': 'Delete',
+                                'action': function() {
+                                    if (confirm('Are you sure you want to delete this item and all its children?')) {
+                                        const equipmentId = node.id.replace('equipment_', '');
+                                        window.location.href = `/equipment/${equipmentId}/delete/`;
+                                    }
+                                },
+                                'icon': 'fas fa-trash'
+                            }
+                        };
+                    }
+                }
+            }).on('ready.jstree', function() {
+                console.log('Tree is ready');
+            }).on('move_node.jstree', function(e, data) {
+                // When a node is moved, update the server
+                const equipmentId = data.node.id.replace('equipment_', '');
+                const newParentId = data.parent === '#' ? '' : data.parent.replace('equipment_', '');
+                
+                // AJAX call to update position
+                fetch('/equipment/update-position/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        id: equipmentId,
+                        parent_id: newParentId,
+                        position: data.position
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showSuccess('Equipment position updated. Refreshing tree...');
+                        // Reload the page to reflect the updated hierarchy
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showError('Error: ' + data.message);
+                        // Reload the tree to reset the position
+                        $('#equipment-tree').jstree(true).refresh();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Server error occurred');
+                    $('#equipment-tree').jstree(true).refresh();
+                });
+            });
+            
+            // Search functionality
+            let searchTimeout = null;
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function() {
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    searchTimeout = setTimeout(function() {
+                        $('#equipment-tree').jstree(true).search(searchInput.value);
+                    }, 250);
+                });
+            }
+            
+            // Level filter
+            if (levelFilter) {
+                levelFilter.addEventListener('change', function() {
+                    const level = levelFilter.value;
+                    if (level === 'all') {
+                        // Show all nodes
+                        $('#equipment-tree').jstree(true).show_all();
+                    } else {
+                        // Filter by level
+                        const tree = $('#equipment-tree').jstree(true);
+                        const allNodes = tree.get_json('#', { flat: true });
+                        
+                        allNodes.forEach(node => {
+                            const nodeData = node.data || {};
+                            const nodeLevel = nodeData.level || 1;
+                            
+                            if (level === '5' && nodeLevel >= 5) {
+                                // Show level 5+
+                                tree.show_node(node.id);
+                            } else if (level === nodeLevel.toString()) {
+                                // Show exact level match
+                                tree.show_node(node.id);
+                            } else {
+                                // Hide non-matching levels
+                                tree.hide_node(node.id);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Toggle details
+            if (showFabricant) {
+                showFabricant.addEventListener('change', updateNodeDisplay);
+            }
+            
+            if (showDescription) {
+                showDescription.addEventListener('change', updateNodeDisplay);
+            }
+            
+            function updateNodeDisplay() {
+                const showFab = showFabricant.checked;
+                const showDesc = showDescription.checked;
+                
+                // Refresh the tree to update display
+                const tree = $('#equipment-tree').jstree(true);
+                const allNodes = tree.get_json('#', { flat: true });
+                
+                allNodes.forEach(node => {
+                    const nodeData = node.data || {};
+                    let nodeText = nodeData.baseName || node.text;
+                    
+                    // Add details if selected
+                    if (showFab && nodeData.fabricant) {
+                        nodeText += ` <span class="equipment-details">(${nodeData.fabricant})</span>`;
+                    }
+                    
+                    if (showDesc && nodeData.description) {
+                        nodeText += ` <span class="equipment-details">- ${nodeData.description}</span>`;
+                    }
+                    
+                    // Update node text
+                    tree.rename_node(node.id, nodeText);
+                });
+            }
+            
+            // Expand/collapse all
+            if (expandAllBtn) {
+                expandAllBtn.addEventListener('click', function() {
+                    $('#equipment-tree').jstree('open_all');
+                });
+            }
+            
+            if (collapseAllBtn) {
+                collapseAllBtn.addEventListener('click', function() {
+                    $('#equipment-tree').jstree('close_all');
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error initializing tree:', error);
+            showError('Error initializing tree: ' + error.message);
+        }
+        
+        // Notification helpers
+        function showError(message) {
+            const notifications = document.getElementById('notifications');
+            if (!notifications) return;
+            
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            notifications.appendChild(alert);
+            
+            // Auto-dismiss
+            setTimeout(() => {
+                $(alert).alert('close');
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            const notifications = document.getElementById('notifications');
+            if (!notifications) return;
+            
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            notifications.appendChild(alert);
+            
+            // Auto-dismiss
+            setTimeout(() => {
+                $(alert).alert('close');
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

@@ -640,12 +640,3 @@ def import_log_detail(request, pk):
     
     log = get_object_or_404(ImportLog, pk=pk)
     return render(request, 'parts/import_log_detail.html', {'log': log})
-
-@login_required
-@ensure_csrf_cookie
-def codification_viewer(request):
-    """View for the equipment codification tree viewer"""
-    context = {
-        'title': 'Equipment Codification Viewer'
-    }
-    return render(request, 'parts/codification_viewer.html', context)

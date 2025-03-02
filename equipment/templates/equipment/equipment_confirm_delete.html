@@ -1,0 +1,38 @@
+<!-- equipment/templates/equipment/equipment_confirm_delete.html -->
+{% extends 'parts/base.html' %}
+
+{% block title %}Delete Equipment - {{ equipment.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Confirm Deletion</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p>You are about to delete the equipment item: <strong>{{ equipment.name }}</strong> (Code: {{ equipment.code }}).</p>
+                        <p>This action cannot be undone.</p>
+                        
+                        {% if equipment.sub_equipment.exists %}
+                        <hr>
+                        <p class="mb-0"><strong>Note:</strong> This equipment has {{ equipment.sub_equipment.count }} sub-equipment items that will be orphaned if you delete it.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'equipment-detail' equipment.id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

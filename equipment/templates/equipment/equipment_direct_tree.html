@@ -1,0 +1,208 @@
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Equipment Hierarchy - Direct Rendering{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<style>
+    #equipment-tree {
+        max-height: 800px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    .equipment-code {
+        font-family: monospace;
+        padding: 2px 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        margin-left: 5px;
+        font-size: 0.9em;
+    }
+    #debug-output {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Equipment Hierarchy (Direct Rendering)</h2>
+    
+    <div class="alert alert-info">
+        <strong>Debug Mode:</strong> This page directly renders equipment data from the database to help troubleshoot tree issues.
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'equipment-list' %}" class="btn btn-secondary">Equipment List</a>
+                        <a href="{% url 'equipment-create' %}" class="btn btn-success">Add Equipment</a>
+                        <a href="{% url 'import-equipment-csv' %}" class="btn btn-info">Import CSV</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Debug Tools</h5>
+                </div>
+                <div class="card-body">
+                    <button id="inspect-data" class="btn btn-warning mb-2 w-100">Inspect Tree Data</button>
+                    <button id="expand-all" class="btn btn-outline-primary mb-2 w-100">Expand All</button>
+                    <button id="collapse-all" class="btn btn-outline-secondary w-100">Collapse All</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Equipment Tree</h5>
+                </div>
+                <div class="card-body">
+                    <div id="notifications"></div>
+                    <div id="equipment-tree"></div>
+                    <div id="debug-output" class="mt-3 d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded');
+        
+        // Check dependencies
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery is not loaded');
+            showError('jQuery is not loaded. Please check your browser console.');
+            return;
+        }
+        
+        if (typeof $.jstree === 'undefined') {
+            console.error('jstree plugin is not loaded');
+            showError('jstree plugin is not loaded. Please check your browser console.');
+            return;
+        }
+        
+        const treeContainer = document.getElementById('equipment-tree');
+        if (!treeContainer) {
+            console.error('Tree container not found');
+            return;
+        }
+        
+        // Get the tree data that was passed from the server
+        const treeData = {{ tree_data_json|safe }};
+        console.log('Tree data:', treeData);
+        
+        // Debug tools
+        document.getElementById('inspect-data').addEventListener('click', function() {
+            const debugOutput = document.getElementById('debug-output');
+            debugOutput.textContent = JSON.stringify(treeData, null, 2);
+            debugOutput.classList.remove('d-none');
+        });
+        
+        document.getElementById('expand-all').addEventListener('click', function() {
+            $('#equipment-tree').jstree('open_all');
+        });
+        
+        document.getElementById('collapse-all').addEventListener('click', function() {
+            $('#equipment-tree').jstree('close_all');
+        });
+        
+        try {
+            // Initialize the tree
+            $(treeContainer).jstree({
+                'core': {
+                    'data': treeData,
+                    'themes': {
+                        'name': 'default',
+                        'responsive': true
+                    }
+                },
+                'plugins': ['wholerow', 'types', 'state'],
+                'types': {
+                    'default': {
+                        'icon': 'fas fa-cube'
+                    },
+                    'active': {
+                        'icon': 'fas fa-check-circle text-success'
+                    },
+                    'inactive': {
+                        'icon': 'fas fa-times-circle text-secondary'
+                    },
+                    'maintenance': {
+                        'icon': 'fas fa-wrench text-warning'
+                    },
+                    'decommissioned': {
+                        'icon': 'fas fa-trash-alt text-danger'
+                    }
+                }
+            });
+            
+            $(treeContainer).on('ready.jstree', function() {
+                console.log('Tree is ready');
+                showSuccess('Tree initialized successfully.');
+            });
+            
+            $(treeContainer).on('state_ready.jstree', function() {
+                console.log('Tree state ready');
+            });
+            
+            // Error handler
+            $(treeContainer).on('error.jstree', function(e, data) {
+                console.error('jstree error:', data);
+                showError('Tree error: ' + JSON.stringify(data));
+            });
+            
+        } catch (error) {
+            console.error('Error initializing tree:', error);
+            showError('Error initializing tree: ' + error.message);
+        }
+        
+        // Helper functions for notifications
+        function showError(message) {
+            const notifications = document.getElementById('notifications');
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            notifications.appendChild(alert);
+        }
+        
+        function showSuccess(message) {
+            const notifications = document.getElementById('notifications');
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            notifications.appendChild(alert);
+        }
+    });
+</script>
+{% endblock %}

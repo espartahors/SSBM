@@ -1,0 +1,41 @@
+{% extends 'parts/base.html' %}
+{% load static %}
+
+{% block title %}Equipment Hierarchy - Bomdels{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Equipment Hierarchy</h2>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Equipment Tree</h5>
+        </div>
+        <div class="card-body">
+            <!-- Tree container -->
+            <div id="equipment-tree"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Make sure jQuery is loaded first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Then load jstree -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+<!-- Then load your custom tree script -->
+<script src="{% static 'equipment/js/simple_tree.js' %}"></script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<style>
+    #equipment-tree {
+        min-height: 200px;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}

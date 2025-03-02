@@ -17,3 +17,6 @@ django-debug-toolbar==4.2.0
 # Production (when deploying)
 gunicorn==21.2.0
 whitenoise==6.5.0  # For serving static files
+
+# equipments
+django-mptt==0.14.0
