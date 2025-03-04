@@ -49,8 +49,11 @@ INSTALLED_APPS = [
     'parts.apps.PartsConfig',
 
     # equipments apps
-    'mptt',  # Add django-mptt
-    'equipment.apps.EquipmentConfig',  # Add equipment app
+    'mptt',
+    'equipment.apps.EquipmentConfig',
+
+    # catalog apps
+    'catalog.apps.CatalogConfig',
 ]
 
 MIDDLEWARE = [

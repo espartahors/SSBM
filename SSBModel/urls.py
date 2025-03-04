@@ -29,6 +29,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('parts/', include('parts.urls')),
     path('equipment/', include('equipment.urls')),
+    path('catalog/', include('catalog.urls')),
 ]
 
 # Add URL patterns for media files
