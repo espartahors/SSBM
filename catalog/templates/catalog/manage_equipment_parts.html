@@ -1,0 +1,330 @@
+{% extends 'parts/base.html' %}
+{% load catalog_tags %}
+
+{% block title %}Manage Parts - {{ equipment.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-card {
+        transition: all 0.2s;
+    }
+    .product-card:hover {
+        border-color: #007bff;
+        cursor: pointer;
+    }
+    .product-card.selected {
+        border-color: #007bff;
+        background-color: #f0f9ff;
+    }
+    .product-card.selected .check-mark {
+        display: block;
+    }
+    .check-mark {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #007bff;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .category-section {
+        margin-bottom: 20px;
+    }
+    .category-header {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    .search-container {
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+        background-color: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .product-image {
+        height: 100px;
+        width: 100%;
+        object-fit: contain;
+        background-color: #f8f9fa;
+        padding: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Parts for {{ equipment.name }}</h2>
+        <a href="{% url 'equipment-detail' equipment.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Equipment
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Selected parts sidebar -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Selected Parts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="search-container mb-3">
+                        <input type="text" id="search-parts" class="form-control" placeholder="Search parts...">
+                    </div>
+                    
+                    <form method="POST" id="parts-form">
+                        {% csrf_token %}
+                        {{ form.equipment_id }}
+                        <div id="selected-parts-list" class="mb-3">
+                            <p class="text-muted" id="no-parts-message" {% if equipment.catalog_products.exists %}style="display: none;"{% endif %}>
+                                No parts selected yet. Click on products from the right to add them.
+                            </p>
+                            
+                            <ul class="list-group" id="selected-parts">
+                                {% for product in equipment.catalog_products.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">{{ product.name }}</div>
+                                        <small class="text-muted">{{ product.sku }}</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input product-checkbox" type="checkbox" 
+                                               name="{{ form.product_ids.html_name }}" 
+                                               value="{{ product.id }}" 
+                                               id="product-{{ product.id }}"
+                                               checked>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                            <button type="button" id="btn-clear-all" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-2"></i> Clear All
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- All products with filtering -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Available Parts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Click on a part to select/deselect it for this equipment.
+                    </div>
+                    
+                    <!-- Product tabs by category -->
+                    <ul class="nav nav-tabs" id="categoryTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                                All Categories
+                            </button>
+                        </li>
+                        {% for category in sorted_categories %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="{{ category|slugify }}-tab" data-bs-toggle="tab" data-bs-target="#{{ category|slugify }}" type="button" role="tab" aria-controls="{{ category|slugify }}" aria-selected="false">
+                                {{ category }}
+                            </button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <div class="tab-content mt-3" id="categoryTabsContent">
+                        <!-- All products tab -->
+                        <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                            {% for category in sorted_categories %}
+                            <div class="category-section">
+                                <div class="category-header">
+                                    <h5 class="mb-0">{{ category }}</h5>
+                                </div>
+                                
+                                <div class="row row-cols-1 row-cols-md-3 g-3">
+                                    {% for product in products_by_category|get_item:category %}
+                                    <div class="col product-item" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-sku="{{ product.sku }}">
+                                        <div class="card product-card h-100 {% if product in equipment.catalog_products.all %}selected{% endif %}">
+                                            <div class="check-mark {% if product in equipment.catalog_products.all %}d-flex{% endif %}">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            
+                                            {% if product.images.first %}
+                                            <img src="{{ product.images.first.image.url }}" class="product-image" alt="{{ product.name }}">
+                                            {% else %}
+                                            <div class="product-image d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ product.name }}</h6>
+                                                <p class="card-text small">SKU: {{ product.sku }}</p>
+                                                <p class="card-text fw-bold">{{ product.price|currency }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Category-specific tabs -->
+                        {% for category in sorted_categories %}
+                        <div class="tab-pane fade" id="{{ category|slugify }}" role="tabpanel" aria-labelledby="{{ category|slugify }}-tab">
+                            <div class="row row-cols-1 row-cols-md-3 g-3">
+                                {% for product in products_by_category|get_item:category %}
+                                <div class="col product-item" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-sku="{{ product.sku }}">
+                                    <div class="card product-card h-100 {% if product in equipment.catalog_products.all %}selected{% endif %}">
+                                        <div class="check-mark {% if product in equipment.catalog_products.all %}d-flex{% endif %}">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        
+                                        {% if product.images.first %}
+                                        <img src="{{ product.images.first.image.url }}" class="product-image" alt="{{ product.name }}">
+                                        {% else %}
+                                        <div class="product-image d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-image fa-2x text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ product.name }}</h6>
+                                            <p class="card-text small">SKU: {{ product.sku }}</p>
+                                            <p class="card-text fw-bold">{{ product.price|currency }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle product card click to select/deselect
+        const productCards = document.querySelectorAll('.product-card');
+        const selectedPartsList = document.getElementById('selected-parts');
+        const noPartsMessage = document.getElementById('no-parts-message');
+        
+        productCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const productItem = this.closest('.product-item');
+                const productId = productItem.dataset.productId;
+                const productName = productItem.dataset.productName;
+                const productSku = productItem.dataset.productSku;
+                
+                // Toggle selected state
+                this.classList.toggle('selected');
+                
+                // Check if an existing checkbox exists
+                const existingCheckbox = document.getElementById(`product-${productId}`);
+                
+                if (this.classList.contains('selected')) {
+                    // Show checkmark
+                    this.querySelector('.check-mark').style.display = 'flex';
+                    
+                    // Add to selected parts if not already there
+                    if (!existingCheckbox) {
+                        // Create new list item
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        listItem.id = `part-item-${productId}`;
+                        
+                        listItem.innerHTML = `
+                            <div>
+                                <div class="fw-bold">${productName}</div>
+                                <small class="text-muted">${productSku}</small>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input product-checkbox" type="checkbox" 
+                                       name="{{ form.product_ids.html_name }}" 
+                                       value="${productId}" 
+                                       id="product-${productId}"
+                                       checked>
+                            </div>
+                        `;
+                        
+                        selectedPartsList.appendChild(listItem);
+                        
+                        // Hide no parts message if this is the first part
+                        if (selectedPartsList.children.length > 0) {
+                            noPartsMessage.style.display = 'none';
+                        }
+                    } else {
+                        // Just check the box if already in list
+                        existingCheckbox.checked = true;
+                    }
+                } else {
+                    // Hide checkmark
+                    this.querySelector('.check-mark').style.display = 'none';
+                    
+                    // Uncheck or remove from selected parts
+                    if (existingCheckbox) {
+                        existingCheckbox.checked = false;
+                    }
+                }
+            });
+        });
+        
+        // Clear all button
+        document.getElementById('btn-clear-all').addEventListener('click', function() {
+            // Uncheck all checkboxes
+            document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Remove selected class from all product cards
+            productCards.forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('.check-mark').style.display = 'none';
+            });
+            
+            // Show no parts message
+            noPartsMessage.style.display = 'block';
+        });
+        
+        // Search functionality
+        document.getElementById('search-parts').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Filter product items
+            document.querySelectorAll('.product-item').forEach(item => {
+                const productName = item.dataset.productName.toLowerCase();
+                const productSku = item.dataset.productSku.toLowerCase();
+                
+                if (productName.includes(searchTerm) || productSku.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

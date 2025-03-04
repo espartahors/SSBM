@@ -1,0 +1,425 @@
+{% extends 'parts/base.html' %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Product Template{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attribute-row {
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+    .remove-attribute {
+        color: #dc3545;
+        cursor: pointer;
+    }
+    .attribute-handle {
+        cursor: grab;
+        color: #6c757d;
+    }
+    #attribute-container {
+        min-height: 50px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if is_edit %}Edit{% else %}Create{% endif %} Product Template</h2>
+        <a href="{% url 'admin-template-list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Templates
+        </a>
+    </div>
+    
+    <form method="POST" id="template-form">
+        {% csrf_token %}
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Template Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <label for="name" class="col-sm-2 col-form-label">Template Name <span class="text-danger">*</span></label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="name" name="name" required 
+                               value="{{ template.name|default:'' }}">
+                        <div class="form-text">A descriptive name for the template (e.g., "Ball Bearing", "Electric Motor")</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <label for="description" class="col-sm-2 col-form-label">Description</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ template.description|default:'' }}</textarea>
+                        <div class="form-text">Optional description of what this template is used for</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Template Attributes</h5>
+                <button type="button" id="add-attribute" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i> Add Attribute
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Add attributes that will be used for products with this template. You can reorder them by dragging the handle.
+                    </p>
+                </div>
+                
+                <div id="attribute-container">
+                    {% if template_attributes %}
+                        {% for attr in template_attributes %}
+                        <div class="attribute-row" data-index="{{ forloop.counter0 }}">
+                            <div class="row">
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-grip-vertical attribute-handle"></i>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <label class="form-label">Attribute Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control attribute-name" name="attribute_name" 
+                                               value="{{ attr.attribute.name }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-2">
+                                        <label class="form-label">Type</label>
+                                        <select class="form-select attribute-type" name="attribute_type">
+                                            <option value="text" {% if attr.attribute.attr_type == 'text' %}selected{% endif %}>Text</option>
+                                            <option value="number" {% if attr.attribute.attr_type == 'number' %}selected{% endif %}>Number</option>
+                                            <option value="boolean" {% if attr.attribute.attr_type == 'boolean' %}selected{% endif %}>Boolean</option>
+                                            <option value="choice" {% if attr.attribute.attr_type == 'choice' %}selected{% endif %}>Choice</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-2">
+                                        <label class="form-label">Unit</label>
+                                        <input type="text" class="form-control attribute-unit" name="attribute_unit" 
+                                               value="{{ attr.attribute.unit|default:'' }}" 
+                                               {% if attr.attribute.attr_type != 'number' %}disabled{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <label class="form-label">Choices (comma-separated)</label>
+                                        <input type="text" class="form-control attribute-choices" name="attribute_choices" 
+                                               value="{{ attr.attribute.choices_list|default:'' }}" 
+                                               {% if attr.attribute.attr_type != 'choice' %}disabled{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="mb-2 mt-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="attribute_required" value="{{ forloop.counter0 }}" 
+                                                   id="required_{{ forloop.counter0 }}" {% if attr.required %}checked{% endif %}>
+                                            <label class="form-check-label" for="required_{{ forloop.counter0 }}">
+                                                Required
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-times-circle remove-attribute" title="Remove Attribute"></i>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Template for new attributes, will be cloned by JavaScript -->
+                        <div class="attribute-row" data-index="0">
+                            <div class="row">
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-grip-vertical attribute-handle"></i>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <label class="form-label">Attribute Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control attribute-name" name="attribute_name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-2">
+                                        <label class="form-label">Type</label>
+                                        <select class="form-select attribute-type" name="attribute_type">
+                                            <option value="text">Text</option>
+                                            <option value="number">Number</option>
+                                            <option value="boolean">Boolean</option>
+                                            <option value="choice">Choice</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-2">
+                                        <label class="form-label">Unit</label>
+                                        <input type="text" class="form-control attribute-unit" name="attribute_unit" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-2">
+                                        <label class="form-label">Choices (comma-separated)</label>
+                                        <input type="text" class="form-control attribute-choices" name="attribute_choices" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="mb-2 mt-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="attribute_required" value="0" 
+                                                   id="required_0">
+                                            <label class="form-check-label" for="required_0">
+                                                Required
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-times-circle remove-attribute" title="Remove Attribute"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="alert alert-warning mt-3" id="no-attributes" {% if template_attributes %}style="display: none;"{% endif %}>
+                    <p class="mb-0">No attributes added yet. Use the "Add Attribute" button to add one.</p>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> {% if is_edit %}Update{% else %}Create{% endif %} Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const attributeContainer = document.getElementById('attribute-container');
+        const noAttributesWarning = document.getElementById('no-attributes');
+        
+        // Make attribute rows sortable
+        new Sortable(attributeContainer, {
+            handle: '.attribute-handle',
+            animation: 150,
+            onEnd: function() {
+                // Update indices after reordering
+                updateAttributeIndices();
+            }
+        });
+        
+        // Function to update attribute indices
+        function updateAttributeIndices() {
+            const rows = attributeContainer.querySelectorAll('.attribute-row');
+            rows.forEach((row, index) => {
+                row.setAttribute('data-index', index);
+                
+                // Update checkbox values and IDs
+                const checkbox = row.querySelector('input[name="attribute_required"]');
+                checkbox.value = index;
+                checkbox.id = `required_${index}`;
+                const label = row.querySelector(`label[for^="required_"]`);
+                label.setAttribute('for', `required_${index}`);
+            });
+        }
+        
+        // Add new attribute
+        document.getElementById('add-attribute').addEventListener('click', function() {
+            // Clone the first attribute row
+            const firstRow = attributeContainer.querySelector('.attribute-row');
+            const newRow = firstRow ? firstRow.cloneNode(true) : createNewAttributeRow();
+            
+            // Clear input values
+            newRow.querySelectorAll('input[type="text"]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Uncheck checkboxes
+            newRow.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Reset selects to first option
+            newRow.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+                
+                // Trigger change event to update dependent fields
+                const event = new Event('change');
+                select.dispatchEvent(event);
+            });
+            
+            // Determine new index
+            const currentRows = attributeContainer.querySelectorAll('.attribute-row');
+            const newIndex = currentRows.length;
+            
+            // Update index attributes
+            newRow.setAttribute('data-index', newIndex);
+            const checkbox = newRow.querySelector('input[name="attribute_required"]');
+            checkbox.value = newIndex;
+            checkbox.id = `required_${newIndex}`;
+            const label = newRow.querySelector(`label[for^="required_"]`);
+            label.setAttribute('for', `required_${newIndex}`);
+            
+            // Add row to container
+            attributeContainer.appendChild(newRow);
+            
+            // Hide no attributes warning
+            noAttributesWarning.style.display = 'none';
+            
+            // Set up event handlers
+            setupAttributeRowHandlers(newRow);
+        });
+        
+        // Create a new attribute row from scratch if needed
+        function createNewAttributeRow() {
+            const row = document.createElement('div');
+            row.className = 'attribute-row';
+            row.innerHTML = `
+                <div class="row">
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-grip-vertical attribute-handle"></i>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Attribute Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control attribute-name" name="attribute_name" required>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <label class="form-label">Type</label>
+                            <select class="form-select attribute-type" name="attribute_type">
+                                <option value="text">Text</option>
+                                <option value="number">Number</option>
+                                <option value="boolean">Boolean</option>
+                                <option value="choice">Choice</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="mb-2">
+                            <label class="form-label">Unit</label>
+                            <input type="text" class="form-control attribute-unit" name="attribute_unit" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Choices (comma-separated)</label>
+                            <input type="text" class="form-control attribute-choices" name="attribute_choices" disabled>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="mb-2 mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="attribute_required" value="0" 
+                                       id="required_0">
+                                <label class="form-check-label" for="required_0">
+                                    Required
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-times-circle remove-attribute" title="Remove Attribute"></i>
+                    </div>
+                </div>
+            `;
+            return row;
+        }
+        
+        // Set up event handlers for attribute rows
+        function setupAttributeRowHandlers(row) {
+            // Type change handler
+            const typeSelect = row.querySelector('.attribute-type');
+            const unitInput = row.querySelector('.attribute-unit');
+            const choicesInput = row.querySelector('.attribute-choices');
+            
+            typeSelect.addEventListener('change', function() {
+                if (this.value === 'number') {
+                    unitInput.disabled = false;
+                    choicesInput.disabled = true;
+                    choicesInput.value = '';
+                } else if (this.value === 'choice') {
+                    unitInput.disabled = true;
+                    choicesInput.disabled = false;
+                    unitInput.value = '';
+                } else {
+                    unitInput.disabled = true;
+                    choicesInput.disabled = true;
+                    unitInput.value = '';
+                    choicesInput.value = '';
+                }
+            });
+            
+            // Remove attribute handler
+            const removeBtn = row.querySelector('.remove-attribute');
+            removeBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to remove this attribute?')) {
+                    row.remove();
+                    
+                    // Check if there are any rows left
+                    const remainingRows = attributeContainer.querySelectorAll('.attribute-row');
+                    if (remainingRows.length === 0) {
+                        noAttributesWarning.style.display = 'block';
+                    } else {
+                        // Update indices
+                        updateAttributeIndices();
+                    }
+                }
+            });
+        }
+        
+        // Set up handlers for existing rows
+        document.querySelectorAll('.attribute-row').forEach(setupAttributeRowHandlers);
+        
+        // Form submission validation
+        document.getElementById('template-form').addEventListener('submit', function(e) {
+            const templateName = document.getElementById('name').value.trim();
+            if (!templateName) {
+                e.preventDefault();
+                alert('Template name is required.');
+                return;
+            }
+            
+            const attributeRows = attributeContainer.querySelectorAll('.attribute-row');
+            if (attributeRows.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one attribute to the template.');
+                return;
+            }
+            
+            // Validate each attribute has a name
+            let valid = true;
+            attributeRows.forEach(row => {
+                const nameInput = row.querySelector('.attribute-name');
+                if (!nameInput.value.trim()) {
+                    valid = false;
+                    nameInput.classList.add('is-invalid');
+                } else {
+                    nameInput.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!valid) {
+                e.preventDefault();
+                alert('All attributes must have a name.');
+                return;
+            }
+        });
+    });
+</script>
+{% endblock %}

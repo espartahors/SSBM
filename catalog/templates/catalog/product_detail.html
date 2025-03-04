@@ -1,0 +1,329 @@
+{% extends 'parts/base.html' %}
+{% load catalog_tags %}
+
+{% block title %}{{ product.name }} ({{ product.sku }}) - Catalog{% endblock %}
+
+{% block extra_css %}
+<style>
+    .specs-table th {
+        width: 40%;
+        background-color: #f8f9fa;
+    }
+    .product-gallery {
+        position: relative;
+    }
+    .product-gallery .carousel-control-prev,
+    .product-gallery .carousel-control-next {
+        background-color: rgba(0,0,0,0.3);
+        width: 40px;
+        height: 40px;
+        top: 50%;
+        border-radius: 50%;
+        transform: translateY(-50%);
+    }
+    .product-gallery .carousel-control-prev {
+        left: 10px;
+    }
+    .product-gallery .carousel-control-next {
+        right: 10px;
+    }
+    .related-equipment-item {
+        transition: all 0.2s;
+    }
+    .related-equipment-item:hover {
+        background-color: #f8f9fa;
+    }
+    .stock-info {
+        font-size: 0.9rem;
+    }
+    .thumbnail-nav {
+        display: flex;
+        margin-top: 10px;
+        overflow-x: auto;
+    }
+    .thumbnail-nav .thumb {
+        width: 60px;
+        height: 60px;
+        margin-right: 5px;
+        cursor: pointer;
+        border: 2px solid #ddd;
+        padding: 2px;
+    }
+    .thumbnail-nav .thumb.active {
+        border-color: #007bff;
+    }
+    .thumbnail-nav img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumbs -->
+    {% breadcrumbs category=product.category product=product %}
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-body">
+                    {% if product.images.exists %}
+                    <div class="product-gallery">
+                        <div id="product-images" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in product.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if product.images.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#product-images" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#product-images" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                            
+                            <!-- Thumbnails -->
+                            <div class="thumbnail-nav">
+                                {% for image in product.images.all %}
+                                <div class="thumb {% if forloop.first %}active{% endif %}" data-bs-target="#product-images" data-bs-slide-to="{{ forloop.counter0 }}">
+                                    <img src="{{ image.image.url }}" alt="Thumbnail {{ forloop.counter }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center p-5 bg-light">
+                        <i class="fas fa-image fa-4x text-muted"></i>
+                        <p class="mt-3">No images available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Technical Drawings -->
+            {% if product.drawing or product.model_3d %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Technical Documents</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% if product.drawing %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Technical Drawing</span>
+                            <a href="{{ product.drawing.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-file-pdf me-1"></i> View Drawing
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if product.model_3d %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>3D Model</span>
+                            <a href="{{ product.model_3d.url }}" class="btn btn-sm btn-outline-info" download>
+                                <i class="fas fa-cube me-1"></i> Download
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">{{ product.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">SKU: {{ product.sku }}</h6>
+                    
+                    <div class="mb-4">
+                        {{ product.description|linebreaks }}
+                    </div>
+                    
+                    <!-- Quick specs snapshot - McMaster-Carr style -->
+                    <div class="quick-specs mb-4">
+                        <h5>Quick Specs</h5>
+                        <div class="row">
+                            {% for attr in product.attributes.all|slice:":6" %}
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-bold me-2">{{ attr.attribute.name }}:</span>
+                                    <span>
+                                        {% if attr.attribute.attr_type == 'boolean' %}
+                                            {% if attr.value_boolean %}Yes{% else %}No{% endif %}
+                                        {% else %}
+                                            {{ attr.value }}
+                                            {% if attr.attribute.unit %}<span class="text-muted">{{ attr.attribute.unit }}</span>{% endif %}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing Info -->
+                    <div class="pricing-info mb-4">
+                        {% if product.on_sale %}
+                        <h3 class="text-danger mb-1">{{ product.sale_price|currency }}</h3>
+                        <p class="text-muted"><s>{{ product.price|currency }}</s> You save {{ product.price|sub:product.sale_price|currency }}</p>
+                        {% else %}
+                        <h3 class="mb-1">{{ product.price|currency }}</h3>
+                        {% endif %}
+                        
+                        <p class="stock-info mt-2">
+                            {% if product.stock > 0 %}
+                            <span class="text-success"><i class="fas fa-check-circle me-1"></i> In Stock ({{ product.stock }} available)</span>
+                            {% else %}
+                            <span class="text-danger"><i class="fas fa-times-circle me-1"></i> Out of Stock</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- Add to cart placeholder (if implementing e-commerce) -->
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <input type="number" class="form-control" min="1" value="1">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Specifications Table (McMaster-Carr style) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Specifications</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0 specs-table">
+                            <tbody>
+                                {% for attr in product.attributes.all %}
+                                <tr>
+                                    <th class="w-40">{{ attr.attribute.name }}</th>
+                                    <td class="w-60">
+                                        {% if attr.attribute.attr_type == 'boolean' %}
+                                            {% if attr.value_boolean %}Yes{% else %}No{% endif %}
+                                        {% else %}
+                                            {{ attr.value }}
+                                            {% if attr.attribute.unit %}<span class="text-muted">{{ attr.attribute.unit }}</span>{% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if product.technical_details %}
+                                <tr>
+                                    <th>Additional Details</th>
+                                    <td>{{ product.technical_details|linebreaks }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Equipment -->
+            {% if product.related_equipment.exists %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Used In Equipment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for equipment in product.related_equipment.all %}
+                        <a href="{% url 'equipment-detail' equipment.id %}" class="list-group-item list-group-item-action related-equipment-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ equipment.name }}</h6>
+                                <small class="text-muted">{{ equipment.full_code }}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">
+                                <i class="fas fa-link"></i>
+                            </span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Similar Products -->
+    {% if similar_products %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Similar Products</h5>
+        </div>
+        <div class="card-body">
+            <div class="row row-cols-1 row-cols-md-4 g-4">
+                {% for similar in similar_products %}
+                <div class="col">
+                    <div class="card h-100">
+                        {% if similar.images.first %}
+                        <img src="{{ similar.images.first.image.url }}" class="card-img-top" alt="{{ similar.name }}">
+                        {% else %}
+                        <div class="card-img-top bg-light text-center py-4">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h6 class="card-title">{{ similar.name }}</h6>
+                            <p class="card-text small">SKU: {{ similar.sku }}</p>
+                            <p class="card-text fw-bold">{{ similar.sale_price|default:similar.price|currency }}</p>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <a href="{% url 'product-detail' similar.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize thumbnail navigation
+    document.addEventListener('DOMContentLoaded', function() {
+        const thumbs = document.querySelectorAll('.thumbnail-nav .thumb');
+        thumbs.forEach(thumb => {
+            thumb.addEventListener('click', function() {
+                // Remove active class from all thumbs
+                thumbs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked thumb
+                this.classList.add('active');
+            });
+        });
+        
+        // Update active thumbnail when carousel changes
+        const carousel = document.getElementById('product-images');
+        if (carousel) {
+            carousel.addEventListener('slide.bs.carousel', event => {
+                const index = event.to;
+                thumbs.forEach(t => t.classList.remove('active'));
+                thumbs[index].classList.add('active');
+            });
+        }
+    });
+</script>
+{% endblock %}

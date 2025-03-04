@@ -1,0 +1,151 @@
+{% extends 'parts/base.html' %}
+
+{% block title %}{{ template.name }} - Template Details{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Template: {{ template.name }}</h2>
+        <div>
+            <a href="{% url 'admin-template-edit' template.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i> Edit Template
+            </a>
+            <a href="{% url 'admin-template-list' %}" class="btn btn-secondary">
+                <i class="fas fa-list me-2"></i> All Templates
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Template details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Template Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Template Name:</dt>
+                        <dd class="col-sm-9">{{ template.name }}</dd>
+                        
+                        <dt class="col-sm-3">Slug:</dt>
+                        <dd class="col-sm-9"><code>{{ template.slug }}</code></dd>
+                        
+                        <dt class="col-sm-3">Description:</dt>
+                        <dd class="col-sm-9">{{ template.description|default:"No description provided." }}</dd>
+                        
+                        <dt class="col-sm-3">Products Using:</dt>
+                        <dd class="col-sm-9">{{ products.count }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Template attributes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Template Attributes</h5>
+                </div>
+                <div class="card-body">
+                    {% if template_attributes %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Attribute Name</th>
+                                        <th>Type</th>
+                                        <th>Unit/Choices</th>
+                                        <th>Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attr in template_attributes %}
+                                    <tr>
+                                        <td>{{ attr.order }}</td>
+                                        <td>{{ attr.attribute.name }}</td>
+                                        <td>
+                                            {% if attr.attribute.attr_type == 'text' %}
+                                                <span class="badge bg-secondary">Text</span>
+                                            {% elif attr.attribute.attr_type == 'number' %}
+                                                <span class="badge bg-primary">Number</span>
+                                            {% elif attr.attribute.attr_type == 'boolean' %}
+                                                <span class="badge bg-success">Boolean</span>
+                                            {% elif attr.attribute.attr_type == 'choice' %}
+                                                <span class="badge bg-info">Choice</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attr.attribute.attr_type == 'number' %}
+                                                {{ attr.attribute.unit|default:"-" }}
+                                            {% elif attr.attribute.attr_type == 'choice' %}
+                                                {% if attr.attribute.choices_list %}
+                                                <small>{{ attr.attribute.choices_list }}</small>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attr.required %}
+                                                <span class="badge bg-warning">Required</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">Optional</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <p class="mb-0">No attributes defined for this template. <a href="{% url 'admin-template-edit' template.id %}">Edit template</a> to add attributes.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Using products -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Products Using Template</h5>
+                </div>
+                <div class="card-body">
+                    {% if products %}
+                        <ul class="list-group">
+                            {% for product in products %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">{{ product.name }}</div>
+                                    <small class="text-muted">{{ product.sku }}</small>
+                                </div>
+                                <a href="{% url 'product-detail' product.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        {% if products.count > 5 %}
+                            <div class="alert alert-warning mt-3">
+                                <p class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Be careful when editing this template as it may affect {{ products.count }} products.
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <p class="mb-0">No products are currently using this template.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends 'parts/base.html' %}
+{% load catalog_tags %}
+
+{% block title %}{{ category.name }} - Parts Catalog{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumbs -->
+    {% breadcrumbs category=category %}
+
+    <div class="row">
+        <!-- Sidebar with filters -->
+        <div class="col-md-3">
+            <!-- Category navigation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Categories</h5>
+                </div>
+                <div class="card-body">
+                    {% category_tree current_category=category %}
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Filter Options</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filter-form" method="GET">
+                        {% if category.get_children %}
+                        <!-- Subcategory dropdown -->
+                        <div class="mb-3">
+                            <label class="form-label">Subcategory</label>
+                            <select name="subcategory" class="form-select">
+                                <option value="">All Subcategories</option>
+                                {% for subcat in category.get_children %}
+                                <option value="{{ subcat.slug }}" {% if request.GET.subcategory == subcat.slug %}selected{% endif %}>
+                                    {{ subcat.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <!-- Price range filter -->
+                        <div class="mb-3">
+                            <label class="form-label">Price Range</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="min_price" class="form-control" placeholder="Min" value="{{ request.GET.min_price|default:'' }}" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="max_price" class="form-control" placeholder="Max" value="{{ request.GET.max_price|default:'' }}" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- In stock filter -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="in_stock" id="in_stock" value="1" {% if request.GET.in_stock %}checked{% endif %}>
+                                <label class="form-check-label" for="in_stock">
+                                    In Stock Only
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic attribute filters -->
+                        {% for attr in filter_attributes %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ attr.name }}</label>
+                            
+                            {% if attr.attr_type == 'text' or attr.attr_type == 'choice' %}
+                                {% if attr.choices_list %}
+                                <select name="attr_{{ attr.slug }}" class="form-select">
+                                    <option value="">Any</option>
+                                    {% for choice in attr.choices_list.split %}
+                                    <option value="{{ choice }}" {% if request.GET.attr_attr.slug == choice %}selected{% endif %}>
+                                        {{ choice }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <input type="text" name="attr_{{ attr.slug }}" class="form-control" 
+                                       value="{{ request.GET.attr_attr.slug|default:'' }}">
+                                {% endif %}
+                                
+                            {% elif attr.attr_type == 'number' %}
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Min</span>
+                                            <input type="number" name="min_attr_{{ attr.slug }}" class="form-control" 
+                                                   value="{{ request.GET.min_attr_attr.slug|default:'' }}" step="any">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Max</span>
+                                            <input type="number" name="max_attr_{{ attr.slug }}" class="form-control" 
+                                                   value="{{ request.GET.max_attr_attr.slug|default:'' }}" step="any">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if attr.unit %}
+                                <small class="text-muted">Unit: {{ attr.unit }}</small>
+                                {% endif %}
+                                
+                            {% elif attr.attr_type == 'boolean' %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="attr_{{ attr.slug }}" value="true"
+                                           id="check_{{ attr.slug }}" {% if request.GET.attr_attr.slug == 'true' %}checked{% endif %}>
+                                    <label class="form-check-label" for="check_{{ attr.slug }}">
+                                        Yes
+                                    </label>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <a href="{{ request.path }}" class="btn btn-outline-secondary">Clear All</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content: Products and subcategories -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title mb-0">{{ category.name }}</h2>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Sort By
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="?sort=name">Name (A-Z)</a></li>
+                            <li><a class="dropdown-item" href="?sort=-name">Name (Z-A)</a></li>
+                            <li><a class="dropdown-item" href="?sort=price">Price (Low to High)</a></li>
+                            <li><a class="dropdown-item" href="?sort=-price">Price (High to Low)</a></li>
+                            <li><a class="dropdown-item" href="?sort=-created_at">Newest First</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if category.description %}
+                    <div class="mb-4">
+                        <p>{{ category.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Subcategories -->
+                    {% if subcategories %}
+                    <div class="mb-4">
+                        <h5>Subcategories</h5>
+                        <div class="row row-cols-1 row-cols-md-3 g-3">
+                            {% for subcat in subcategories %}
+                            <div class="col">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ subcat.name }}</h6>
+                                        {% if subcat.description %}
+                                        <p class="card-text small">{{ subcat.description|truncatechars:80 }}</p>
+                                        {% endif %}
+                                        <a href="{% url 'category-detail' subcat.slug %}" class="stretched-link"></a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Products Grid -->
+                    <div class="mt-4">
+                        <h5 class="mb-3">Products ({{ products.count }})</h5>
+                        
+                        {% if products %}
+                        <div class="row row-cols-1 row-cols-md-3 g-4">
+                            {% for product in products %}
+                            <div class="col">
+                                <div class="card h-100 product-card">
+                                    <a href="{% url 'product-detail' product.pk %}" class="text-decoration-none">
+                                        {% if product.images.first %}
+                                        <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                        {% else %}
+                                        <div class="card-img-top bg-light text-center py-4">
+                                            <i class="fas fa-image fa-3x text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title text-dark">{{ product.name }}</h6>
+                                            <p class="card-text small text-muted">SKU: {{ product.sku }}</p>
+                                            
+                                            <!-- Key specs (first 3 attributes) -->
+                                            {% if product.attributes.exists %}
+                                            <div class="specs-preview">
+                                                <ul class="list-unstyled small">
+                                                    {% for attr in product.attributes.all|slice:":3" %}
+                                                    <li>
+                                                        <span class="fw-bold">{{ attr.attribute.name }}:</span> 
+                                                        {{ attr.value }}{% if attr.attribute.unit %} {{ attr.attribute.unit }}{% endif %}
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <p class="card-text mt-2">
+                                                {% if product.on_sale %}
+                                                <span class="text-danger fw-bold">{{ product.sale_price|currency }}</span>
+                                                <small class="text-muted"><s>{{ product.price|currency }}</s></small>
+                                                {% else %}
+                                                <span class="fw-bold">{{ product.price|currency }}</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </a>
+                                    <div class="card-footer bg-white border-top-0">
+                                        <div class="d-grid">
+                                            <a href="{% url 'product-detail' product.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <p class="mb-0">No products found in this category. Try adjusting your filters or browse other categories.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

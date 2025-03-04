@@ -1,0 +1,203 @@
+{% extends 'parts/base.html' %}
+{% load static %}
+{% load catalog_tags %}
+
+{% block title %}Parts Catalog - McMaster Style{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    .catalog-header {
+        background-color: #f8f9fa;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .category-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .subcategory-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    .subcategory-list li {
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <h1 class="display-5 fw-bold">Parts Catalog</h1>
+                <p class="lead">Browse our extensive collection of industrial parts and components</p>
+                
+                <form action="{% url 'product-list' %}" method="get" class="mt-4">
+                    <div class="input-group input-group-lg">
+                        <input type="text" name="q" class="form-control" placeholder="Search by part number, name, or description..." aria-label="Search catalog">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-5 d-none d-md-block text-end">
+                <img src="{% static 'catalog/img/catalog-hero.png' %}" alt="Parts Catalog" class="img-fluid" style="max-height: 200px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h2 class="mb-4">Browse Categories</h2>
+    
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for category in categories %}
+        <div class="col">
+            <div class="card category-card">
+                <div class="card-body text-center">
+                    <div class="category-icon">
+                        {% if category.slug == 'bearings' %}
+                            <i class="fas fa-cog"></i>
+                        {% elif category.slug == 'fasteners' %}
+                            <i class="fas fa-bolt"></i>
+                        {% elif category.slug == 'electrical' %}
+                            <i class="fas fa-plug"></i>
+                        {% elif category.slug == 'motors' %}
+                            <i class="fas fa-fan"></i>
+                        {% elif category.slug == 'pneumatic' %}
+                            <i class="fas fa-wind"></i>
+                        {% else %}
+                            <i class="fas fa-tools"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <p class="card-text text-muted">{{ category.description|truncatechars:100 }}</p>
+                    
+                    {% if category.get_children %}
+                    <div class="mt-3">
+                        <ul class="subcategory-list">
+                            {% for subcategory in category.get_children|slice:":5" %}
+                            <li>
+                                <a href="{% url 'category-detail' subcategory.slug %}" class="text-decoration-none">
+                                    {{ subcategory.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if category.get_children.count > 5 %}
+                            <li><small class="text-muted">and {{ category.get_children.count|add:"-5" }} more...</small></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'category-detail' category.slug %}" class="btn btn-outline-primary mt-3">View All</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Featured Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for product in featured_products|default:'' %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                {% if product.images.first and product.images.first.image %}
+                                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="/media/010.jpg" class="card-img-top" alt="{{ product.name }}">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ product.name }}</h6>
+                                    <p class="card-text small">SKU: {{ product.sku }}</p>
+                                    <p class="card-text fw-bold">{{ product.price|currency }}</p>
+                                </div>
+                                <div class="card-footer bg-white border-top-0">
+                                    <a href="{% url 'product-detail' product.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted">No featured products to display.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">New Arrivals</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for product in new_products|default:'' %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                {% if product.images.first and product.images.first.image %}
+                                    <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="/media/010.jpg" class="card-img-top" alt="{{ product.name }}">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ product.name }}</h6>
+                                    <p class="card-text small">SKU: {{ product.sku }}</p>
+                                    <p class="card-text fw-bold">{{ product.price|currency }}</p>
+                                </div>
+                                <div class="card-footer bg-white border-top-0">
+                                    <a href="{% url 'product-detail' product.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted">No new products to display.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4>Need a specific part?</h4>
+                            <p class="mb-0">We can help you find the exact part you need for your equipment.</p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <a href="{% url 'product-list' %}" class="btn btn-primary">Browse All Products</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
