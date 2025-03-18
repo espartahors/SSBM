@@ -113,7 +113,7 @@
         }
         
         // Get the tree data that was passed from the server
-        const treeData = {{ tree_data_json|safe }};
+        const treeData = JSON.parse('{{ tree_data_json|escapejs }}');
         console.log('Tree data:', treeData);
         
         // Debug tools

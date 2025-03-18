@@ -6,20 +6,22 @@ body {
     background-color: #f5f5f5;
     margin: 0;
     padding: 0;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh; /* Ensures it can expand */
+    overflow-y: auto;  /* Enables scrolling */
+
 }
 
 /* Main Container */
 .main-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 100px); /* Adjust for navbar and margins */
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 5px;
-    overflow: hidden;
+    min-height: calc(100vh - 100px); /* Allows content to expand */
+    overflow: auto;  /* Ensures scrolling inside */
 }
+
 
 /* Toolbar */
 .toolbar {
@@ -60,7 +62,7 @@ body {
 .content {
     display: flex;
     flex: 1;
-    overflow: hidden;
+
 }
 
 .left-panel {
@@ -69,14 +71,14 @@ body {
     border-right: 1px solid #ddd;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+
 }
 
 .right-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+
 }
 
 .right-top {
@@ -191,7 +193,7 @@ body {
     border: 1px solid #ddd;
     margin-bottom: 15px;
     border-radius: 5px;
-    overflow: hidden;
+
 }
 
 .component-info-header {
@@ -366,11 +368,6 @@ body {
 
 /* parts/static/parts/css/style.css */
 
-/* Global Styles */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-}
 
 /* Auth Forms */
 .auth-form-container {
@@ -451,7 +448,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+
 }
 
 .document-icon {
